@@ -5,7 +5,7 @@
 \begin{spacing}{1.5}
 {
 
-本模板基于南开大学计算机学院本科生毕业论文TeX模板修改而来，暂用于软件学院本科生毕业论文撰写。由于计算机学院的TeX模板部分格式与软件学院以往的毕业论文格式要求存在差异，因此对其进行了适当调整。目前，计算机学院该模板的最新版本更新于2024年3月，其详细信息可参考模板官方主页：\href{https://tr0py.github.io/NKU-thesis-template-2020/}{NKThesis: 南开大学本科生毕业论文模板}。
+深度神经网络在图像分类等任务中取得了优异性能，但其容易受到对抗样本的攻击。现有的对抗性训练方法主要针对基于梯度的$L_p$范数约束攻击（如FGSM、PGD等）进行防御，对于基于语义特征的遮蔽攻击缺乏有效的防御能力。本文提出了一种基于显著性图的遮蔽攻击方法及其对应的对抗性训练策略。首先，利用梯度显著性图定位图像中对分类决策最关键的像素区域；其次，设计了固定遮蔽攻击和自适应遮蔽攻击两种攻击方式，其中自适应遮蔽攻击能够以最小的扰动面积实现有效攻击；最后，提出了混合对抗性训练策略，将遮蔽攻击与PGD攻击相结合，提升模型对多种攻击类型的综合鲁棒性。在MNIST数据集上，以LeNet-5为基础模型进行了系统实验。实验结果表明：（1）自适应显著性遮蔽攻击对标准模型的攻击成功率显著高于固定遮蔽攻击；（2）基于自适应显著性遮蔽的对抗性训练可使模型在遮蔽攻击下的准确率从34.33\%提升至94.30\%；（3）混合对抗性训练策略在保持对遮蔽攻击防御效果的同时，对PGD攻击的防御准确率达到91.48\%以上。本文的研究为提升深度学习模型在多类型攻击场景下的鲁棒性提供了新的思路和方法。
 
 }
 
@@ -16,19 +16,19 @@
 
 
 \begin{guanjianci}
-南开大学，软件学院，毕业论文，模板
+对抗样本，对抗性训练，显著性图，遮蔽攻击，自适应攻击，深度学习鲁棒性
 \end{guanjianci}
 
 
 
 \begin{abstract}
 \begin{spacing}{1.5}
-This template is modified from the undergraduate thesis LaTeX template of the College of Computer Science, Nankai University, and is temporarily used for undergraduate thesis writing of the College of Software. Since some formats of the LaTeX template from the College of Computer Science differ from the previous thesis format requirements of the College of Software, appropriate adjustments have been made. The latest version of the template from the College of Computer Science was updated in March 2024, and detailed information can be found on the official homepage: \text{https://tr0py.github.io/NKU-thesis-template-2020/}.
+Deep neural networks have achieved excellent performance in tasks such as image classification, but they are vulnerable to adversarial examples. Existing adversarial training methods primarily defend against gradient-based $L_p$-norm constrained attacks (such as FGSM and PGD), while lacking effective defense against semantically-driven occlusion attacks. This thesis proposes a saliency map-based occlusion attack method and its corresponding adversarial training strategy. First, gradient-based saliency maps are used to locate the pixel regions most critical to classification decisions. Second, two attack approaches are designed: fixed occlusion attack and adaptive occlusion attack, where the adaptive variant achieves effective attacks with minimal perturbation area. Finally, a mixed adversarial training strategy is proposed, combining occlusion attacks with PGD attacks to improve the model's comprehensive robustness against multiple attack types. Systematic experiments are conducted on the MNIST dataset using LeNet-5 as the base model. Experimental results show that: (1) the adaptive saliency occlusion attack achieves significantly higher attack success rates against standard models than fixed occlusion attacks; (2) adversarial training based on adaptive saliency occlusion improves model accuracy under occlusion attacks from 34.33\% to 94.30\%; (3) the mixed adversarial training strategy maintains defense against occlusion attacks while achieving over 91.48\% defense accuracy against PGD attacks. This research provides new ideas and methods for improving the robustness of deep learning models under multi-type attack scenarios.
 
 \end{spacing}
 \end{abstract}
 
 
 \begin{keywords}
-Nankai University, College of Software, Graduation Thesis, Template
-\end{keywords} 
+Adversarial Examples, Adversarial Training, Saliency Map, Occlusion Attack, Adaptive Attack, Deep Learning Robustness
+\end{keywords}

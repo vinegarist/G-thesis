@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(make compile:*)",
+      "Bash(xelatex main:*)",
+      "Bash(biber main:*)",
+      "Bash(ls -lh \"D:/软件/对抗性防御/对抗性防御-1/03.代码\"/*.ipynb)",
+      "Bash(python3:*)",
+      "Bash(./build.bat)",
+      "Bash(bash build.sh)",
+      "Bash(grep -E \"^-.*\\\\.\\(py|ipynb\\)$\")",
+      "Bash(/tmp/experimental_summary.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(find D:/软件/南开大学论文模板2026/ -name *.png -o -name *.pdf -o -name *.jpg)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -1,0 +1,377 @@
+% -*- coding: utf-8 -*-
+
+\chapter{基于显著性图的遮蔽攻击与对抗性训练方法} \label{chpt:pipeline}
+
+\section{问题定义与总体框架}
+
+\subsection{问题的形式化定义}
+
+设图像分类模型为 $f_{\theta}: \mathcal{X} \rightarrow \mathcal{Y}$，其中 $\theta$ 为模型参数，$\mathcal{X} \subseteq [0,1]^{C \times H \times W}$ 为输入空间，$\mathcal{Y} = \{1, 2, \ldots, K\}$ 为标签空间。对于输入样本 $(x, y) \in \mathcal{X} \times \mathcal{Y}$，标准训练的目标是最小化经验风险：
+\begin{equation}
+  \min_{\theta} \; \mathbb{E}_{(x,y)\sim\mathcal{D}} \left[ \mathcal{L}\!\left(f_{\theta}(x),\, y\right) \right]
+\end{equation}
+其中 $\mathcal{L}$ 为交叉熵损失，$\mathcal{D}$ 为训练数据分布。
+
+然而，标准训练得到的模型在面对对抗样本时极为脆弱。基于 $L_p$ 范数的对抗性训练将训练目标改写为鞍点问题：
+\begin{equation}
+  \min_{\theta} \; \mathbb{E}_{(x,y)\sim\mathcal{D}} \left[ \max_{\|\delta\|_p \leq \varepsilon} \mathcal{L}\!\left(f_{\theta}(x+\delta),\, y\right) \right]
+\end{equation}
+该框架要求模型对所有满足 $\|\delta\|_p \leq \varepsilon$ 约束的扰动保持正确预测。以 Madry 等人提出的 PGD 对抗性训练\cite{madry2018pgd}为代表，$L_p$ 范数方法在抵御梯度类攻击方面已取得显著成效。
+
+然而，现实场景中的对抗威胁并不局限于小幅度的像素级扰动。遮蔽攻击（Occlusion Attack）通过遮挡图像中对模型决策最关键的区域来实现欺骗，其本质是一种基于语义特征的结构性扰动。此类攻击游离于 $L_p$ 范数约束之外，传统对抗性训练方法对其防御能力有限。
+
+本章针对上述不足，提出一种基于梯度显著性图的遮蔽攻击框架及其对应的对抗性训练策略。给定模型 $f_{\theta}$、输入图像 $x$ 及真实标签 $y$，遮蔽攻击的目标是构造对抗样本 $x'$：
+\begin{equation}
+  x' = x \odot (1 - M) + c \cdot M, \quad \text{使得} \quad f_{\theta}(x') \neq y
+  \label{eq:occlusion_goal}
+\end{equation}
+其中 $M \in \{0,1\}^{C \times H \times W}$ 为二值遮蔽掩码，$c$ 为遮蔽填充值（本文取 $c=0$，即黑色遮蔽），$\odot$ 为逐元素乘积。攻击的核心问题在于如何高效地确定掩码 $M$ 的位置，使遮蔽区域恰好覆盖模型最依赖的视觉特征。
+
+\subsection{方法总体框架}
+
+本文提出的方法由三个核心模块构成：
+
+\begin{enumerate}
+  \item \textbf{关键区域定位}：利用梯度显著性图 $S(x,y) = \left|\partial f_y(x)/\partial x\right|$，以单次反向传播定位模型决策的关键像素区域，生成二值掩码 $M$。
+  \item \textbf{遮蔽攻击生成}：在关键区域定位的基础上，分别设计固定显著性遮蔽攻击与自适应显著性遮蔽攻击，前者适用于批量高效攻击，后者以最小代价实现逐样本自适应攻击。
+  \item \textbf{对抗性训练}：将遮蔽攻击生成的对抗样本引入训练循环，并进一步提出混合对抗性训练策略，将遮蔽攻击与 PGD 攻击\cite{madry2018pgd}相结合，提升模型对多类型攻击的泛化防御能力。
+\end{enumerate}
+
+相比现有 $L_p$ 范数方法，本文方法的核心差异在于攻击的构造方式：$L_p$ 攻击在全图范围内施加微小扰动，而遮蔽攻击仅修改少数关键区域，扰动幅度大但范围集中。这一差异使得遮蔽攻击在语义层面更贴近真实世界的遮挡干扰，同时也要求防御模型具备更强的局部鲁棒性。
+
+
+\section{基于梯度显著性图的关键区域定位}
+
+\subsection{梯度显著性图的计算}
+
+梯度显著性图由 Simonyan 等人\cite{simonyan2014saliency}提出，其核心思想是利用模型对输入的一阶梯度信息衡量每个像素对预测结果的重要程度。给定分类模型 $f_{\theta}$、输入图像 $x \in \mathbb{R}^{C \times H \times W}$ 及真实类别 $y$，梯度显著性图定义为：
+\begin{equation}
+  S(x, y) = \left| \frac{\partial f_y(x)}{\partial x} \right|
+  \label{eq:saliency}
+\end{equation}
+其中 $f_y(x)$ 表示模型对类别 $y$ 的输出得分（logit），$|\cdot|$ 表示逐元素取绝对值。显著性值越高的像素，其微小变化对模型输出的影响越大，因此被视为模型决策的关键特征。
+
+在实现层面，梯度显著性图通过自动微分框架高效计算。算法\ref{alg:saliency}给出了完整的计算流程。
+
+\begin{algorithm}[htbp]
+  \caption{梯度显著性图计算}
+  \label{alg:saliency}
+  \begin{algorithmic}[1]
+    \Require 分类模型 $f_{\theta}$，输入图像 $x$，真实标签 $y$
+    \Ensure 显著性图 $S \in \mathbb{R}^{C \times H \times W}$
+    \State 启用输入梯度追踪：$x.\text{requires\_grad} \leftarrow \text{True}$
+    \State 前向传播：$\text{output} \leftarrow f_{\theta}(x)$
+    \State 提取目标类别得分：$\text{scores} \leftarrow \text{output}[y]$（按真实标签索引）
+    \State 反向传播：计算 $\partial\,\text{scores} / \partial x$（通过自动微分）
+    \State 取绝对值：$S \leftarrow \left| \partial\,\text{scores} / \partial x \right|$
+    \State \Return $S$
+  \end{algorithmic}
+\end{algorithm}
+
+算法\ref{alg:saliency}仅需一次前向传播与一次反向传播，时间复杂度与标准训练的单步梯度计算相当。对于批量输入 $X \in \mathbb{R}^{B \times C \times H \times W}$，可同时计算批次内所有样本的显著性图，进一步提高效率。
+
+\subsection{关键像素区域的选择策略}
+
+得到显著性图 $S$ 后，需从中提取最关键的空间区域以生成遮蔽掩码。本文采用基于卷积的邻域求和策略，其设计动机如下：单像素遮蔽在视觉上几乎不可见且对模型影响有限，而连续的方形区域遮蔽能够同时覆盖高显著性像素及其空间邻域，更符合真实场景中的遮挡形态。
+
+\textbf{邻域显著性聚合。}对显著性图进行空间邻域求和，使用全一卷积核 $\mathbf{1}_{k \times k}$（边长为 $k$ 的方形核，所有权重为 1）：
+\begin{equation}
+  S_{\text{sum}}(i,j) = \sum_{(p,q) \in \mathcal{N}_k(i,j)} S(p,q)
+  \label{eq:conv_sum}
+\end{equation}
+其中 $\mathcal{N}_k(i,j)$ 表示以 $(i,j)$ 为中心的 $k \times k$ 邻域。$S_{\text{sum}}$ 的峰值位置对应显著性最集中的空间区域。在实现上，式\eqref{eq:conv_sum}等价于一次二维卷积操作：
+\begin{equation}
+  S_{\text{sum}} = \text{Conv2d}\!\left(S,\; \mathbf{1}_{k \times k},\; \text{padding}=\lfloor k/2 \rfloor\right)
+\end{equation}
+
+\textbf{Top-$K$ 位置选取。}将 $S_{\text{sum}}$ 展平为一维向量，选取数值最大的 $K$ 个位置索引 $\{(i_1,j_1), \ldots, (i_K,j_K)\}$：
+\begin{equation}
+  \{(i_t, j_t)\}_{t=1}^{K} = \underset{(i,j) \in [H]\times[W]}{\mathrm{top}\text{-}K}\; S_{\text{sum}}(i,j)
+\end{equation}
+
+\textbf{掩码膨胀。}在每个选中的位置 $(i_t, j_t)$ 处，将以其为中心的 $k \times k$ 方形区域在掩码 $M$ 中置为 1：
+\begin{equation}
+  M(p,q) = 1 \quad \text{若} \quad \exists\, t: \max(|p - i_t|, |q - j_t|) \leq \lfloor k/2 \rfloor
+\end{equation}
+
+\textbf{遮蔽施加。}最终对抗样本通过如下公式生成：
+\begin{equation}
+  x' = x \odot (1 - M) + c \cdot M
+  \label{eq:occlusion}
+\end{equation}
+其中 $c=0$ 对应黑色遮蔽，$\odot$ 为逐元素乘积。此公式在遮蔽区域用颜色 $c$ 替换原始像素，在非遮蔽区域保持原始像素不变。
+
+\subsection{与梯度积分方法的对比}
+
+梯度积分（Integrated Gradients，IG）\cite{sundararajan2017ig}是一种理论性质更完备的特征归因方法，其通过从基准图像 $x_0$（通常为全黑图像）到输入 $x$ 的路径积分计算归因值：
+\begin{equation}
+  \text{IG}_i(x, y) = (x_i - x_{0,i}) \cdot \int_0^1 \frac{\partial f_y(x_0 + \alpha(x - x_0))}{\partial x_i} \,\mathrm{d}\alpha
+\end{equation}
+在实践中，积分通过 Riemann 近似以 $n_{\text{steps}}=50$ 步离散化，需要 50 次前向与反向传播，且依赖 Captum 等外部归因库。
+
+相比之下，本文采用的梯度显著性图仅需 1 次前向与反向传播，且无需任何外部依赖，在计算效率上具有显著优势。表\ref{tab:saliency_compare}从多个维度对两种方法进行比较。
+
+\begin{table}[htbp]
+  \centering
+  \caption{梯度显著性图与梯度积分方法对比}
+  \label{tab:saliency_compare}
+  \begin{tabular}{lcc}
+    \toprule
+    对比维度 & 梯度显著性图 & 梯度积分 \\
+    \midrule
+    计算代价 & 1次反向传播 & $n_{\text{steps}}=50$次前向+反向 \\
+    相对速度 & 快速 & 约慢50倍 \\
+    外部依赖 & 无 & 需要 Captum 库 \\
+    归因精度 & 较好 & 更精确 \\
+    理论公理性 & 一般 & 满足完整性、虚变量公理 \\
+    训练适用性 & 高 & 低 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+在对抗性训练场景中，攻击生成被嵌入每个训练迭代，需要对每个小批量数据实时执行。若使用梯度积分，每次迭代的攻击生成开销将是标准前向传播的约 100 倍（50次前向加50次反向），使训练时间增加数十倍，工程可行性极低。因此，本文选择梯度显著性图作为关键区域定位的核心工具，在保证攻击质量的同时实现了高效的训练流程。
+
+
+\section{固定显著性遮蔽攻击}
+
+\subsection{算法设计}
+
+固定显著性遮蔽攻击（Fixed Saliency Occlusion Attack，FSOA）是本文提出的基础攻击方法，其核心思想是对批次内所有样本施加统一参数的遮蔽操作。给定超参数 top\_$k$（关键区域数量）和 kernel\_size（遮蔽窗口尺寸），算法对每个样本独立定位最显著的 top\_$k$ 个邻域聚合峰值，并在这些位置施加固定尺寸的方形遮蔽。
+
+算法\ref{alg:fixed_attack}给出了固定显著性遮蔽攻击的完整流程。
+
+\begin{algorithm}[htbp]
+  \caption{固定显著性遮蔽攻击（FSOA）}
+  \label{alg:fixed_attack}
+  \begin{algorithmic}[1]
+    \Require 分类模型 $f_{\theta}$，小批量图像 $X \in \mathbb{R}^{B \times C \times H \times W}$，标签 $Y$，
+             关键区域数 top\_$k$，卷积核尺寸 kernel\_size，遮蔽颜色 $c$
+    \Ensure 对抗样本 $X' \in \mathbb{R}^{B \times C \times H \times W}$
+    \State \textbf{显著性计算：}$S \leftarrow \left|\partial f_Y(X)/\partial X\right|$（批量梯度显著性图）
+    \State \textbf{邻域聚合：}$S_{\text{sum}} \leftarrow \text{Conv2d}\!\left(S,\; \mathbf{1}_{\text{kernel\_size}\times\text{kernel\_size}}\right)$
+    \For{每个样本 $i = 1, \ldots, B$}
+      \State 在 $S_{\text{sum},i}$ 中选取数值最大的 top\_$k$ 个位置 $\{(i_t, j_t)\}_{t=1}^{\text{top\_}k}$
+      \State 初始化掩码 $M_i \leftarrow \mathbf{0}^{H \times W}$
+      \For{每个选中位置 $(i_t, j_t)$}
+        \State 将 $(i_t, j_t)$ 为中心的 kernel\_size $\times$ kernel\_size 区域置为 1
+      \EndFor
+    \EndFor
+    \State \textbf{施加遮蔽：}$X' \leftarrow X \odot (1 - M) + c \cdot M$
+    \State \textbf{像素截断：}$X' \leftarrow \mathrm{clamp}(X',\, 0,\, 1)$
+    \State \Return $X'$
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{方法特性分析}
+
+固定显著性遮蔽攻击具有以下特点：
+
+\textbf{均匀攻击强度。}批次内所有样本使用相同的 top\_$k$ 和 kernel\_size，每个样本受到面积相同的遮蔽。这种均匀性便于控制攻击强度，并与训练时的一致性需求相吻合。
+
+\textbf{批量并行高效。}显著性计算与卷积聚合操作均支持批维度的并行计算，在 GPU 上可高效处理大批量数据，适合嵌入训练循环。
+
+\textbf{参数直观可控。}top\_$k$ 直接控制遮蔽区域的数量，kernel\_size 控制每个遮蔽块的尺寸，两者共同决定遮蔽的总覆盖面积约为 top\_$k \times \text{kernel\_size}^2$。在参数合理的情况下，遮蔽面积相对于图像总面积的比例较小，但由于遮蔽位置精确命中显著性峰值，攻击效果显著。
+
+然而，固定攻击存在一个潜在局限：对不同难度的样本施加相同强度的遮蔽，可能对简单样本过度扰动，而对困难样本扰动不足。为此，本文进一步提出自适应遮蔽攻击。
+
+
+\section{自适应显著性遮蔽攻击}
+
+\subsection{算法设计动机}
+
+在固定遮蔽攻击中，攻击强度由 top\_$k$ 和 kernel\_size 统一指定，无法根据单个样本的难易程度动态调整。对于某些结构简单或显著性集中的样本，较小的遮蔽即可使模型预测错误；而对于另一些样本，相同的遮蔽面积可能不足以破坏模型判断。这种"一刀切"的策略导致以下两类问题：
+
+\begin{itemize}
+  \item 对简单样本施加过大遮蔽，产生冗余扰动，可能影响训练时的标签语义一致性；
+  \item 对困难样本攻击力度不足，生成的对抗样本不足以有效挑战模型。
+\end{itemize}
+
+自适应显著性遮蔽攻击（Adaptive Saliency Occlusion Attack，ASOA）通过引入二维渐进搜索机制（遮蔽区域数 $n$、遮蔽半径 $r$）和逐样本提前终止策略，解决上述问题。其核心原则是：\textbf{以最小的扰动面积实现有效攻击}，即在使模型预测错误的前提下，尽可能减少遮蔽覆盖范围。
+
+\subsection{算法描述}
+
+算法\ref{alg:adaptive_attack}详细描述了自适应显著性遮蔽攻击的完整流程。
+
+\begin{algorithm}[htbp]
+  \caption{自适应显著性遮蔽攻击（ASOA）}
+  \label{alg:adaptive_attack}
+  \begin{algorithmic}[1]
+    \Require 分类模型 $f_{\theta}$，小批量图像 $X \in \mathbb{R}^{B \times C \times H \times W}$，标签 $Y$，
+             最大遮蔽区域数 $N$，最大遮蔽半径 $R$，遮蔽颜色 $c$
+    \Ensure 对抗样本 $X' \in \mathbb{R}^{B \times C \times H \times W}$
+    \State \textbf{显著性计算：}$S \leftarrow \left|\partial f_Y(X)/\partial X\right|$
+    \State 按显著性降序对像素位置排序，得到索引序列 $\mathrm{idx}$
+    \State \textbf{预计算累积掩码：}对每个样本，构造所有 $(n, r)$ 组合的累积掩码
+    \For{$r = 1$ \textbf{to} $R$}
+      \For{$i = 0$ \textbf{to} $N-1$}
+        \State 以第 $i$ 显著像素为中心，创建半径为 $r$ 的方形掩码块 $M_{\mathrm{block}}(i,r)$
+        \State 累积：$\mathrm{mask}(i{+}1, r) \leftarrow \mathrm{clamp}\!\left(\mathrm{mask}(i, r) + M_{\mathrm{block}}(i,r),\; 0, 1\right)$
+      \EndFor
+    \EndFor
+    \State 初始化：$X' \leftarrow X.\mathrm{clone}()$，$\mathrm{success}[i] \leftarrow \mathrm{False},\; \forall i$
+    \State \textbf{渐进遮蔽与提前终止：}
+    \For{$n = 1$ \textbf{to} $N$}
+      \If{所有样本均已成功} \textbf{break} \EndIf
+      \For{$r = 1$ \textbf{to} $R$}
+        \If{所有样本均已成功} \textbf{break} \EndIf
+        \For{每个未成功的样本 $i$（$\mathrm{success}[i] = \mathrm{False}$）}
+          \State $X'[i] \leftarrow \left(1 - \mathrm{mask}(n,r)[i]\right) \cdot X[i] + \mathrm{mask}(n,r)[i] \cdot c$
+        \EndFor
+        \State $X' \leftarrow \mathrm{clamp}(X',\, 0,\, 1)$
+        \State $\hat{y} \leftarrow f_{\theta}(X').\mathrm{argmax}(\dim=1)$
+        \For{每个未成功的样本 $i$}
+          \If{$\hat{y}[i] \neq Y[i]$} $\;\mathrm{success}[i] \leftarrow \mathrm{True}$ \EndIf
+        \EndFor
+      \EndFor
+    \EndFor
+    \State \Return $X'$
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{关键创新点分析}
+
+\textbf{（1）逐样本自适应性。}算法维护每个样本的成功标志 $\mathrm{success}[i]$，一旦样本 $i$ 的预测被成功翻转，后续迭代不再对其施加额外扰动。这确保了每个样本只受到"恰好足够"的最小遮蔽，避免不必要的过度扰动。
+
+\textbf{（2）二维渐进搜索。}算法在两个维度上逐步增加攻击强度：遮蔽区域数 $n \in \{1, \ldots, N\}$ 控制覆盖的关键区域数量；遮蔽半径 $r \in \{1, \ldots, R\}$ 控制每个遮蔽块的空间范围。对于每个 $(n, r)$ 组合，遮蔽总面积约为 $n \times (2r+1)^2$。通过先遍历 $n$ 再遍历 $r$ 的搜索顺序，优先以更多区域、较小范围的遮蔽实现攻击，体现了"精准打击"的设计哲学。
+
+\textbf{（3）累积掩码预计算。}为避免在渐进遮蔽过程中重复计算掩码，算法在第3至7行预先计算所有 $(n, r)$ 组合的累积掩码 $\mathrm{mask}(n,r)$。掩码满足递推关系：
+\begin{equation}
+  \mathrm{mask}(n, r) = \mathrm{clamp}\!\left(\mathrm{mask}(n-1, r) + M_{\mathrm{block}}(n, r),\; 0, 1\right)
+\end{equation}
+其中 $M_{\mathrm{block}}(n, r)$ 为以第 $n$ 显著像素为中心、半径 $r$ 的方形掩码块。预计算的复杂度为 $\mathcal{O}(N \cdot R \cdot H \cdot W)$，开销集中于初始化阶段，渐进搜索阶段只需直接查表，效率显著提升。
+
+\textbf{（4）与固定攻击的对比。}固定攻击始终施加相同面积的遮蔽（top\_$k \times \text{kernel\_size}^2$），而自适应攻击为每个样本找到使预测翻转的最小 $(n, r)$ 组合。在攻击成功率相近的情况下，自适应攻击的平均遮蔽面积更小，意味着扰动更精准、更隐蔽；而对于难以攻击的样本，自适应攻击可以逐步提升强度直至成功，攻击成功率更高。
+
+
+\section{对抗性训练策略}
+
+\subsection{基于遮蔽攻击的对抗性训练}
+
+将遮蔽攻击嵌入对抗性训练框架，形成基于遮蔽攻击的对抗性训练（Saliency Occlusion Adversarial Training，SOAT）。其训练目标为：
+\begin{equation}
+  \min_{\theta} \; \mathbb{E}_{(x,y)\sim\mathcal{D}} \left[ \mathcal{L}\!\left(f_{\theta}(x'),\, y\right) \right], \quad x' = \mathcal{A}_{\text{occ}}(f_{\theta}, x, y)
+\end{equation}
+其中 $\mathcal{A}_{\text{occ}}$ 为遮蔽攻击算子（FSOA 或 ASOA）。
+
+需要特别注意的是，遮蔽攻击的生成依赖当前模型状态。在生成攻击时，模型应处于评估（eval）模式以关闭 Dropout 和 BatchNorm 的训练行为，从而确保显著性梯度的稳定性；在用对抗样本更新模型参数时，模型应切换回训练（train）模式。算法\ref{alg:soat}描述了完整的训练流程。
+
+\begin{algorithm}[htbp]
+  \caption{基于遮蔽攻击的对抗性训练（SOAT）}
+  \label{alg:soat}
+  \begin{algorithmic}[1]
+    \Require 训练集 $\mathcal{D}$，模型 $f_{\theta}$，遮蔽攻击算子 $\mathcal{A}$，训练轮数 epochs
+    \Ensure 鲁棒模型参数 $\theta^*$
+    \For{$\mathrm{epoch} = 1$ \textbf{to} epochs}
+      \For{每个小批量 $(X, Y) \in \mathcal{D}$}
+        \State 切换至评估模式：$f_{\theta}.\mathrm{eval}()$
+        \State 生成对抗样本：$X' \leftarrow \mathcal{A}(f_{\theta}, X, Y)$
+        \State 切换至训练模式：$f_{\theta}.\mathrm{train}()$
+        \State 前向传播：$\mathrm{output} \leftarrow f_{\theta}(X')$
+        \State 计算损失：$\mathcal{L} \leftarrow \mathrm{CrossEntropy}(\mathrm{output}, Y)$
+        \State 反向传播并更新参数：$\theta \leftarrow \theta - \eta \nabla_{\theta} \mathcal{L}$
+      \EndFor
+    \EndFor
+    \State \Return $\theta$
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{混合对抗性训练策略}
+
+基于遮蔽攻击的对抗性训练能够有效提升模型对遮蔽类攻击的防御能力，但由于训练时仅使用遮蔽攻击样本，模型可能在抵御梯度类攻击（如 FGSM\cite{goodfellow2015fgsm}、PGD\cite{madry2018pgd}）方面出现退化。这一现象源于对抗性训练的\textbf{攻击类型特异性}：模型倾向于拟合训练时所见攻击的扰动分布，对训练时未见的攻击类型泛化能力有限。
+
+为解决上述问题，本文提出混合对抗性训练策略（Mixed Adversarial Training，MAT），在每次训练迭代中以概率 $p$ 选用遮蔽攻击，以概率 $1-p$ 选用 PGD 攻击：
+
+\begin{equation}
+  X' = \begin{cases}
+    \mathcal{A}_{\text{occ}}(f_{\theta}, X, Y), & \text{以概率 } p \\[4pt]
+    \mathcal{A}_{\text{pgd}}(f_{\theta}, X, Y), & \text{以概率 } 1-p
+  \end{cases}
+\end{equation}
+
+通过混合两类攻击范式，模型在训练过程中同时接触语义遮蔽扰动和 $L_{\infty}$ 梯度扰动，从而在两类攻击的防御上取得更好的权衡。算法\ref{alg:mat}给出了混合对抗性训练的完整流程。
+
+\begin{algorithm}[htbp]
+  \caption{混合对抗性训练（MAT）}
+  \label{alg:mat}
+  \begin{algorithmic}[1]
+    \Require 训练集 $\mathcal{D}$，模型 $f_{\theta}$，遮蔽攻击算子 $\mathcal{A}_{\text{occ}}$，
+             PGD 攻击算子 $\mathcal{A}_{\text{pgd}}$，混合比例 $p=0.5$，训练轮数 epochs
+    \Ensure 鲁棒模型参数 $\theta^*$
+    \For{$\mathrm{epoch} = 1$ \textbf{to} epochs}
+      \For{每个小批量 $(X, Y) \in \mathcal{D}$}
+        \State 采样 $u \sim \mathrm{Uniform}(0, 1)$
+        \If{$u < p$}
+          \State $X' \leftarrow \mathcal{A}_{\text{occ}}(f_{\theta}, X, Y)$
+          \LeftComment{遮蔽攻击分支}
+        \Else
+          \State $X' \leftarrow \mathcal{A}_{\text{pgd}}(f_{\theta}, X, Y)$
+          \LeftComment{PGD 攻击分支}
+        \EndIf
+        \State 前向传播：$\mathrm{output} \leftarrow f_{\theta}(X')$
+        \State 计算损失：$\mathcal{L} \leftarrow \mathrm{CrossEntropy}(\mathrm{output}, Y)$
+        \State 反向传播并更新参数：$\theta \leftarrow \theta - \eta \nabla_{\theta} \mathcal{L}$
+      \EndFor
+    \EndFor
+    \State \Return $\theta$
+  \end{algorithmic}
+\end{algorithm}
+
+混合比例 $p$ 是一个重要的超参数，控制两类攻击在训练数据中的比重。当 $p=1$ 时退化为纯遮蔽攻击对抗性训练，当 $p=0$ 时退化为纯 PGD 对抗性训练，当 $p=0.5$ 时两类攻击等权混合。本文实验中取 $p=0.5$，以期在两类防御能力之间取得平衡，具体效果将在第四章实验中验证。
+
+\subsection{训练参数与实现细节}
+
+本文所有训练实验在统一的参数配置下进行，以保证实验结果的可重复性和可比性。表\ref{tab:training_params}列出了全部训练超参数及其含义。
+
+\begin{table}[htbp]
+  \centering
+  \caption{训练超参数配置}
+  \label{tab:training_params}
+  \begin{tabular}{llp{5.5cm}}
+    \toprule
+    参数 & 取值 & 含义描述 \\
+    \midrule
+    epochs & 50 & 训练总轮数 \\
+    batch\_size & 256 & 小批量大小 \\
+    lr & 0.001 & 初始学习率 \\
+    optimizer & Adam & 优化器类型 \\
+    PGD $\varepsilon$ & 0.1 & PGD 攻击扰动预算（$L_\infty$ 范数上界）\\
+    PGD step\_size & 0.025 & PGD 单步步长 \\
+    PGD iterations & 20 & PGD 迭代步数 \\
+    top\_$k$ & 9 & 固定遮蔽攻击关键区域数 \\
+    kernel\_size & 3 & 遮蔽窗口边长（像素） \\
+    $N$ & 5 & 自适应攻击最大遮蔽区域数 \\
+    $R$ & 3 & 自适应攻击最大遮蔽半径 \\
+    ratio $p$ & 0.5 & 混合训练中遮蔽攻击的比例 \\
+    occlusion\_color $c$ & 0.0 & 遮蔽填充颜色（黑色） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{PGD 攻击参数。}扰动预算 $\varepsilon=0.1$ 和步长 $\mathrm{step\_size}=0.025$ 基于 $L_{\infty}$ 范数，像素值归一化到 $[0,1]$。PGD 迭代 20 步，每步沿梯度符号方向移动 $\mathrm{step\_size}$，并投影回 $\varepsilon$-球内，具体更新规则为：
+\begin{equation}
+  x_{t+1} = \Pi_{x,\varepsilon}\!\left(x_t + \mathrm{step\_size} \cdot \mathrm{sign}\!\left(\nabla_x \mathcal{L}(f_\theta(x_t), y)\right)\right)
+\end{equation}
+其中 $\Pi_{x,\varepsilon}$ 表示向以原始样本 $x$ 为中心的 $L_\infty$ 范数 $\varepsilon$-球的投影操作。
+
+\textbf{固定遮蔽参数。}top\_$k=9$ 与 kernel\_size$=3$ 意味着每个样本最多被遮蔽 $9 \times 3^2 = 81$ 个像素。对于 MNIST 的 $28 \times 28 = 784$ 像素图像，遮蔽比例约为 10.3\%。
+
+\textbf{自适应遮蔽参数。}最大区域数 $N=5$、最大半径 $R=3$ 定义了二维搜索空间，最大可能的遮蔽面积为 $5 \times (2 \times 3+1)^2 = 5 \times 49 = 245$ 像素，约占图像面积的 31.3\%。但在实践中，大多数样本以远小于此的遮蔽即可被成功攻击，体现了自适应策略的"最小扰动"优势。
+
+\textbf{模型评估模式切换。}在生成对抗样本前将模型切换至 eval 模式，关闭 BatchNorm 的均值与方差估计更新以及 Dropout 的随机失活，确保前向传播与反向传播的确定性，从而获得更稳定的显著性梯度。生成对抗样本后立即切换回 train 模式进行参数更新，这一细节对于训练的稳定性至关重要。
+
+
+\section{本章小结}
+
+本章系统介绍了基于显著性图的遮蔽攻击与对抗性训练方法，主要内容可归纳如下。
+
+首先，对研究问题进行了形式化定义，明确了遮蔽攻击相对于传统 $L_p$ 范数攻击的差异性，指出了现有对抗性训练方法在防御遮蔽攻击方面的局限性，并给出了本章方法的总体框架。
+
+其次，详细阐述了基于梯度显著性图的关键区域定位方法。给出了梯度显著性图的定义与计算算法（算法\ref{alg:saliency}），介绍了基于卷积邻域聚合的 Top-$K$ 位置选取策略与掩码膨胀方法，并与梯度积分方法（IG）进行了多维度对比（表\ref{tab:saliency_compare}），论证了梯度显著性图在对抗性训练场景中的计算效率优势。
+
+第三，提出并详细描述了固定显著性遮蔽攻击（算法\ref{alg:fixed_attack}）。该方法对批次内所有样本施加统一参数的遮蔽操作，具有批量高效、参数可控的特点，适合作为对抗性训练的基础攻击手段。
+
+第四，提出了自适应显著性遮蔽攻击（算法\ref{alg:adaptive_attack}），这是本文的核心创新之一。通过引入逐样本提前终止策略和二维渐进搜索机制（遮蔽区域数与遮蔽半径的联合搜索），自适应攻击能够以最小的扰动面积实现有效攻击，在攻击精准性和攻击成功率方面均优于固定攻击。预计算累积掩码的设计进一步保证了算法的运行效率。
+
+最后，设计了两种对抗性训练策略：基于遮蔽攻击的对抗性训练（算法\ref{alg:soat}）和混合对抗性训练（算法\ref{alg:mat}）。混合训练策略通过以概率 $p=0.5$ 交替使用遮蔽攻击与 PGD 攻击，有效缓解了单一攻击类型训练导致的防御泛化能力不足问题，为模型同时抵御遮蔽攻击和梯度类攻击提供了理论依据与实现方案。训练超参数的详细配置见表\ref{tab:training_params}。
+
+上述方法的实验验证将在第四章展开，包括不同防御策略对多类型攻击的鲁棒性对比、参数敏感性分析等内容。
