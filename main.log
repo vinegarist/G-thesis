@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999998 (TeX Live 2026) (preloaded format=xelatex 2026.3.30)  14 APR 2026 17:53
+This is XeTeX, Version 3.141592653-2.6-0.999998 (TeX Live 2026) (preloaded format=xelatex 2026.3.30)  15 APR 2026 02:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1331,35 +1331,31 @@ Package biblatex Warning: Load 'inputenc' before biblatex.
 \@quotelevel=\count525
 \@quotereset=\count526
 (./main.aux (./abstract.aux) (./introduction.aux) (./background.aux)
-(./pipeline.aux
-
-LaTeX Warning: Label `tab:saliency_compare' multiply defined.
-
-) (./experiment.aux) (./conclusion.aux) (./references.aux)
+(./pipeline.aux) (./experiment.aux) (./conclusion.aux) (./references.aux)
 (./acknowledgements.aux))
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 95.
-LaTeX Font Info:    ... okay on input line 95.
-Package hyperref Info: Link coloring ON on input line 95.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 92.
+LaTeX Font Info:    ... okay on input line 92.
+Package hyperref Info: Link coloring ON on input line 92.
  (./main.out) (./main.out)
 \@outlinefile=\write5
 \openout5 = `main.out'.
@@ -1379,49 +1375,49 @@ Package biblatex Info: Automatic encoding selection.
 Package biblatex Info: Trying to load bibliographic data...
 Package biblatex Info: ... file 'main.bbl' found.
  (./main.bbl)
-Package biblatex Info: Reference section=0 on input line 95.
-Package biblatex Info: Reference segment=0 on input line 95.
+Package biblatex Info: Reference section=0 on input line 92.
+Package biblatex Info: Reference segment=0 on input line 92.
 
 Package pgfplots notification 'compat/show suggested version=true': you might b
 enefit from \pgfplotsset{compat=1.18} (current compat level: 1.13).
 
 \c@lstlisting=\count527
-LaTeX Font Info:    Calculating math sizes for size <15> on input line 120.
+LaTeX Font Info:    Calculating math sizes for size <15> on input line 117.
 LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line
- 120.
+ 117.
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OML+ztmcm on input line
- 120.
+ 117.
 
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OMS+ztmcm on input line
- 120.
+ 117.
 
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OMX+ztmcm on input line
- 120.
+ 117.
 
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
 LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 1
-20.
+17.
 
 (d:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1ptm.fd
 File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <15> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 120.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 117.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <11.10008> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 120.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 117.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9.00009> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 120.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 117.
 
 Package fontspec Info: 
 (fontspec)             Font family 'FZCKJW.ttf(0)' created for font
@@ -1434,27 +1430,27 @@ Package fontspec Info:
 (fontspec)             <->"[fonts/FZCKJW.ttf]/OT:script=hani;language=dflt;"
 
 
-Overfull \hbox (6.29646pt too wide) in paragraph at lines 120--120
+Overfull \hbox (6.29646pt too wide) in paragraph at lines 117--117
  [][] 
  []
 
-LaTeX Font Info:    Calculating math sizes for size <14> on input line 120.
+LaTeX Font Info:    Calculating math sizes for size <14> on input line 117.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <14> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 120.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 117.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.36008> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 120.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 117.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8.40009> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 120.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 117.
 [1
 
 
 ]
-Overfull \hbox (4.58977pt too wide) in paragraph at lines 120--120
+Overfull \hbox (4.58977pt too wide) in paragraph at lines 117--117
 [] \TU/simsun.ttf(0)/m/n/12 年 月 日[] 
  []
 
 
-Overfull \hbox (4.58977pt too wide) in paragraph at lines 120--120
+Overfull \hbox (4.58977pt too wide) in paragraph at lines 117--117
 [] \TU/simsun.ttf(0)/m/n/12 年 月 日[] 
  []
 
@@ -1563,8 +1559,8 @@ Underfull \vbox (badness 2512) has occurred while \output is active []
 
  (./experiment.tex
 第\CJKnumber {4}章 4.
-)
-Underfull \vbox (badness 10000) has occurred while \output is active []
+
+Underfull \vbox (badness 1661) has occurred while \output is active []
 
  [31
 
@@ -1572,23 +1568,48 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 ]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+[32]
+Overfull \hbox (136.56743pt too wide) in paragraph at lines 80--101
+ [][] 
+ []
 
- [32]
-Overfull \vbox (137.92609pt too high) has occurred while \output is active []
+[33] [34]
+Overfull \hbox (108.56146pt too wide) in paragraph at lines 191--209
+ [][] 
+ []
+
+[35] [36] [37] [38]
+
+LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <10.5> not available
+(Font)              size <10.95> substituted on input line 255.
+
+[39]
+Overfull \hbox (76.86111pt too wide) in paragraph at lines 284--297
+ [][] 
+ []
 
 
-[33]
+Underfull \vbox (badness 7012) has occurred while \output is active []
+
+ [40]
+[41] [42]) [43]
 \openout2 = `conclusion.aux'.
 
  (./conclusion.tex
 第\CJKnumber {5}章 5.
-) [34
+
+Underfull \vbox (badness 2538) has occurred while \output is active []
+
+ [44
 
 
 
 
 ]
+Underfull \vbox (badness 1062) has occurred while \output is active []
+
+ [45]
+[46]) [47]
 \openout2 = `references.aux'.
 
  (./references.tex
@@ -1607,7 +1628,7 @@ Overfull \hbox (0.8017pt too wide) in paragraph at lines 9--9
 rning Representations (ICLR)
  []
 
-[35
+[48
 
 
 
@@ -1624,7 +1645,7 @@ Overfull \hbox (13.44232pt too wide) in paragraph at lines 9--9
 nd saliency maps. arXiv preprint
  []
 
-[36]) [37]
+[49]) [50]
 \openout2 = `acknowledgements.aux'.
 
  (./acknowledgements.tex
@@ -1633,7 +1654,7 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \hskip 12.0pt
 (hyperref)                replaced by space on input line 6.
 
-) [38
+) [51
 
 
 
@@ -1647,24 +1668,25 @@ L3 programming layer <2022/08/05>
  ***********
 
 
+LaTeX Font Warning: Size substitutions with differences
+(Font)              up to 0.45pt have occurred.
+
+
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-
-LaTeX Warning: There were multiply-defined labels.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 7D2D5480AFCAF7716CF537B79319E6A8;12103.
+(rerunfilecheck)             Checksum: 60D1231678F605EFFB968A287A9E38AF;11535.
 Package logreq Info: Writing requests to 'main.run.xml'.
 \openout1 = `main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 44811 strings out of 468168
- 1071374 string characters out of 5436524
- 2049634 words of memory out of 5000000
- 72785 multiletter control sequences out of 15000+600000
- 667079 words of font info for 205 fonts, out of 8000000 for 9000
+ 44846 strings out of 468168
+ 1073429 string characters out of 5436524
+ 2049247 words of memory out of 5000000
+ 72819 multiletter control sequences out of 15000+600000
+ 667847 words of font info for 208 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 99i,13n,118p,1707b,5390s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,13n,118p,1707b,5398s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.pdf (45 pages).
+Output written on main.pdf (58 pages).

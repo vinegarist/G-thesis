@@ -1,51 +1,50 @@
 @echo off
-chcp 65001 >nul
 echo ========================================
-echo 南开大学论文模板编译脚本
+echo NKU Thesis Build Script
 echo ========================================
 
 echo.
-echo [1/4] 第一遍 XeLaTeX 编译...
+echo [1/4] XeLaTeX pass 1...
 xelatex main
 if %errorlevel% neq 0 (
-    echo 错误: XeLaTeX 编译失败
+    echo Error: XeLaTeX failed
     pause
     exit /b 1
 )
 
 echo.
-echo [2/4] Biber 处理参考文献...
+echo [2/4] Biber...
 biber main
 if %errorlevel% neq 0 (
-    echo 错误: Biber 处理失败
+    echo Error: Biber failed
     pause
     exit /b 1
 )
 
 echo.
-echo [3/4] 第二遍 XeLaTeX 编译...
+echo [3/4] XeLaTeX pass 2...
 xelatex main
 if %errorlevel% neq 0 (
-    echo 错误: XeLaTeX 编译失败
+    echo Error: XeLaTeX failed
     pause
     exit /b 1
 )
 
 echo.
-echo [4/4] 第三遍 XeLaTeX 编译...
+echo [4/4] XeLaTeX pass 3...
 xelatex main
 if %errorlevel% neq 0 (
-    echo 错误: XeLaTeX 编译失败
+    echo Error: XeLaTeX failed
     pause
     exit /b 1
 )
 
 echo.
-echo [清理] 删除辅助文件...
+echo [Clean] Removing auxiliary files...
 del /q *.aux *.out *.blg *.toc *.bbl *.bcf 2>nul
 
 echo.
 echo ========================================
-echo 编译完成！生成 main.pdf
+echo Build complete! main.pdf generated.
 echo ========================================
 pause
