@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python -c \"import docx; doc = docx.Document\\(r'D:\\\\软件\\\\对抗性防御\\\\1812984-弓世杰-基于FGSM算法的对抗性训练的实现与分析\\(2\\).docx'\\); [print\\(p.text\\) for p in doc.paragraphs]\")",
       "Bash(pip install *)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Read(//d/软件/**)"
     ]
   }
 }
