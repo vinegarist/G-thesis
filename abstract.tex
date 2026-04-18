@@ -5,7 +5,7 @@
 \begin{spacing}{1.5}
 {
 
-深度神经网络在图像分类等任务中取得了优异性能，但其容易受到对抗样本的攻击。现有的对抗性训练方法主要针对基于梯度的$L_p$范数约束攻击（如FGSM、PGD等）进行防御，对于基于语义特征的遮蔽攻击缺乏有效的防御能力。本文提出了一种基于显著性图的遮蔽攻击方法及其对应的对抗性训练策略。首先，利用梯度显著性图定位图像中对分类决策最关键的像素区域；其次，设计了固定遮蔽攻击和自适应遮蔽攻击两种攻击方式，其中自适应遮蔽攻击能够以最小的扰动面积实现有效攻击；最后，提出了混合对抗性训练策略，将遮蔽攻击与PGD攻击相结合，提升模型对多种攻击类型的综合鲁棒性。在MNIST数据集上，以LeNet-5为基础模型进行了系统实验。实验结果表明：（1）自适应显著性遮蔽攻击对标准模型的攻击成功率显著高于固定遮蔽攻击；（2）基于自适应显著性遮蔽的对抗性训练可使模型在遮蔽攻击下的准确率从34.33\%提升至94.30\%；（3）混合对抗性训练策略在保持对遮蔽攻击防御效果的同时，对PGD攻击的防御准确率达到91.48\%以上。本文的研究为提升深度学习模型在多类型攻击场景下的鲁棒性提供了新的思路和方法。
+深度神经网络在图像分类等任务中取得了优异性能，但其对对抗样本的高度敏感引发了安全性担忧。现有对抗性训练方法主要针对$L_p$范数约束下的梯度攻击进行防御，对遮蔽类攻击的防御研究相对匮乏。本文围绕基于显著性图的遮蔽攻击及其对抗性训练方法展开研究。首先，实现了两种特征归因方法——梯度显著性图与梯度积分，分别设计了固定遮蔽攻击和自适应遮蔽攻击两种攻击变体，并系统对比了两种归因方法在攻击效果与计算效率上的差异。在MNIST数据集上基于LeNet-5模型进行了系统实验。结果表明，梯度积分遮蔽攻击在攻击强度上优于显著性遮蔽攻击，但计算代价显著更高；基于显著性遮蔽的对抗性训练可有效提升模型对遮蔽攻击的防御能力；混合对抗性训练策略实现了梯度攻击防御与遮蔽攻击防御的较好平衡。
 
 }
 
@@ -16,19 +16,19 @@
 
 
 \begin{guanjianci}
-对抗样本，对抗性训练，显著性图，遮蔽攻击，自适应攻击，深度学习鲁棒性
+对抗样本，对抗性训练，显著性图，遮蔽攻击，梯度积分
 \end{guanjianci}
 
 
 
 \begin{abstract}
 \begin{spacing}{1.5}
-Deep neural networks have achieved excellent performance in tasks such as image classification, but they are vulnerable to adversarial examples. Existing adversarial training methods primarily defend against gradient-based $L_p$-norm constrained attacks (such as FGSM and PGD), while lacking effective defense against semantically-driven occlusion attacks. This thesis proposes a saliency map-based occlusion attack method and its corresponding adversarial training strategy. First, gradient-based saliency maps are used to locate the pixel regions most critical to classification decisions. Second, two attack approaches are designed: fixed occlusion attack and adaptive occlusion attack, where the adaptive variant achieves effective attacks with minimal perturbation area. Finally, a mixed adversarial training strategy is proposed, combining occlusion attacks with PGD attacks to improve the model's comprehensive robustness against multiple attack types. Systematic experiments are conducted on the MNIST dataset using LeNet-5 as the base model. Experimental results show that: (1) the adaptive saliency occlusion attack achieves significantly higher attack success rates against standard models than fixed occlusion attacks; (2) adversarial training based on adaptive saliency occlusion improves model accuracy under occlusion attacks from 34.33\% to 94.30\%; (3) the mixed adversarial training strategy maintains defense against occlusion attacks while achieving over 91.48\% defense accuracy against PGD attacks. This research provides new ideas and methods for improving the robustness of deep learning models under multi-type attack scenarios.
+Deep neural networks have achieved excellent performance in tasks such as image classification, but their high sensitivity to adversarial examples has raised security concerns. Existing adversarial training methods mainly focus on defending against $L_p$-norm constrained gradient attacks, while research on defense against occlusion-based attacks remains relatively scarce. This thesis investigates saliency map-based occlusion attacks and their corresponding adversarial training methods. First, two feature attribution methods—gradient saliency map and Integrated Gradients—are implemented, with both fixed occlusion attack and adaptive occlusion attack designed as attack variants. The two attribution methods are systematically compared in terms of attack effectiveness and computational efficiency. Systematic experiments are conducted on the MNIST dataset using LeNet-5 as the base model. Results show that Integrated Gradients-based occlusion attacks outperform saliency-based attacks in attack strength but with significantly higher computational cost; saliency occlusion-based adversarial training effectively improves model defense against occlusion attacks; the mixed adversarial training strategy achieves a good balance between gradient attack defense and occlusion attack defense.
 
 \end{spacing}
 \end{abstract}
 
 
 \begin{keywords}
-Adversarial Examples, Adversarial Training, Saliency Map, Occlusion Attack, Adaptive Attack, Deep Learning Robustness
+Adversarial Examples, Adversarial Training, Saliency Map, Occlusion Attack, Integrated Gradients
 \end{keywords}
