@@ -132,63 +132,11 @@
 在对抗性训练场景中，攻击生成被嵌入每个训练迭代，需要对每个小批量数据实时执行。若使用梯度积分，每次迭代的攻击生成开销将是标准前向传播的约 100 倍（50次前向加50次反向），使训练时间增加数十倍，工程可行性极低。因此，本文选择梯度显著性图作为关键区域定位的核心工具，在保证攻击质量的同时实现了高效的训练流程。
 
 
-\section{固定显著性遮蔽攻击}
+\section{自适应显著性遮蔽攻击}
 
 \subsection{算法设计}
 
-固定显著性遮蔽攻击（Fixed Saliency Occlusion Attack，FSOA）是本文提出的基础攻击方法，其核心思想是对批次内所有样本施加统一参数的遮蔽操作。给定超参数 top\_$k$（关键区域数量）和 kernel\_size（遮蔽窗口尺寸），算法对每个样本独立定位最显著的 top\_$k$ 个邻域聚合峰值，并在这些位置施加固定尺寸的方形遮蔽。
-
-算法\ref{alg:fixed_attack}给出了固定显著性遮蔽攻击的完整流程。
-
-\begin{algorithm}[htbp]
-  \caption{固定显著性遮蔽攻击（FSOA）}
-  \label{alg:fixed_attack}
-  \begin{algorithmic}[1]
-    \Require 分类模型 $f_{\theta}$，小批量图像 $X \in \mathbb{R}^{B \times C \times H \times W}$，标签 $Y$，
-             关键区域数 top\_$k$，卷积核尺寸 kernel\_size，遮蔽颜色 $c$
-    \Ensure 对抗样本 $X' \in \mathbb{R}^{B \times C \times H \times W}$
-    \State \textbf{显著性计算：}$S \leftarrow \left|\partial f_Y(X)/\partial X\right|$（批量梯度显著性图）
-    \State \textbf{邻域聚合：}$S_{\text{sum}} \leftarrow \text{Conv2d}\!\left(S,\; \mathbf{1}_{\text{kernel\_size}\times\text{kernel\_size}}\right)$
-    \For{每个样本 $i = 1, \ldots, B$}
-      \State 在 $S_{\text{sum},i}$ 中选取数值最大的 top\_$k$ 个位置 $\{(i_t, j_t)\}_{t=1}^{\text{top\_}k}$
-      \State 初始化掩码 $M_i \leftarrow \mathbf{0}^{H \times W}$
-      \For{每个选中位置 $(i_t, j_t)$}
-        \State 将 $(i_t, j_t)$ 为中心的 kernel\_size $\times$ kernel\_size 区域置为 1
-      \EndFor
-    \EndFor
-    \State \textbf{施加遮蔽：}$X' \leftarrow X \odot (1 - M) + c \cdot M$
-    \State \textbf{像素截断：}$X' \leftarrow \mathrm{clamp}(X',\, 0,\, 1)$
-    \State \Return $X'$
-  \end{algorithmic}
-\end{algorithm}
-
-\subsection{方法特性分析}
-
-固定显著性遮蔽攻击具有以下特点：
-
-\textbf{均匀攻击强度。}批次内所有样本使用相同的 top\_$k$ 和 kernel\_size，每个样本受到面积相同的遮蔽。这种均匀性便于控制攻击强度，并与训练时的一致性需求相吻合。
-
-\textbf{批量并行高效。}显著性计算与卷积聚合操作均支持批维度的并行计算，在 GPU 上可高效处理大批量数据，适合嵌入训练循环。
-
-\textbf{参数直观可控。}top\_$k$ 直接控制遮蔽区域的数量，kernel\_size 控制每个遮蔽块的尺寸，两者共同决定遮蔽的总覆盖面积约为 top\_$k \times \text{kernel\_size}^2$。在参数合理的情况下，遮蔽面积相对于图像总面积的比例较小，但由于遮蔽位置精确命中显著性峰值，攻击效果显著。
-
-然而，固定攻击存在一个潜在局限：对不同难度的样本施加相同强度的遮蔽，可能对简单样本过度扰动，而对困难样本扰动不足。为此，本文进一步提出自适应遮蔽攻击。
-
-
-\section{自适应显著性遮蔽攻击}
-
-\subsection{算法设计动机}
-
-在固定遮蔽攻击中，攻击强度由 top\_$k$ 和 kernel\_size 统一指定，无法根据单个样本的难易程度动态调整。对于某些结构简单或显著性集中的样本，较小的遮蔽即可使模型预测错误；而对于另一些样本，相同的遮蔽面积可能不足以破坏模型判断。这种"一刀切"的策略导致以下两类问题：
-
-\begin{itemize}
-  \item 对简单样本施加过大遮蔽，产生冗余扰动，可能影响训练时的标签语义一致性；
-  \item 对困难样本攻击力度不足，生成的对抗样本不足以有效挑战模型。
-\end{itemize}
-
-自适应显著性遮蔽攻击（Adaptive Saliency Occlusion Attack，ASOA）通过引入二维渐进搜索机制（遮蔽区域数 $n$、遮蔽半径 $r$）和逐样本提前终止策略，解决上述问题。其核心原则是：\textbf{以最小的扰动面积实现有效攻击}，即在使模型预测错误的前提下，尽可能减少遮蔽覆盖范围。
-
-\subsection{算法描述}
+自适应显著性遮蔽攻击（Adaptive Saliency Occlusion Attack，ASOA）是本文提出的核心攻击方法。其核心思想是通过迭代方式逐步遮蔽最关键的区域，以最小的遮蔽面积实现有效攻击。算法引入两个关键参数：最大遮蔽区域数$N$和最大遮蔽半径$R$。
 
 算法\ref{alg:adaptive_attack}详细描述了自适应显著性遮蔽攻击的完整流程。
 
