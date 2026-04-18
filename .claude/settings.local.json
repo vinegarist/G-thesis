@@ -18,6 +18,9 @@
       "Bash(cmd //c build.bat)",
       "Bash(cmd //c \".\\\\build.bat\")",
       "Bash(cmd //c \"D:\\\\\\\\软件\\\\\\\\南开大学论文模板2026\\\\\\\\build.bat\")"
+    ],
+    "additionalDirectories": [
+      "d:\\软件\\南开大学论文模板2026"
     ]
   }
 }
