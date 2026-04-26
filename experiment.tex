@@ -191,6 +191,179 @@
 
 值得注意的是，自适应IG遮蔽攻击（16.66\%）的攻击强度甚至超过了PGD攻击（33.34\%）和C\&W攻击（33.37\%），表明基于精确归因的遮蔽攻击在攻击潜力上可超越主流梯度攻击。然而，这一优势伴随着约50倍的计算开销增加，因此IG遮蔽攻击更适合作为离线评估工具而非对抗性训练中的在线攻击生成手段。
 
+\subsection{攻击效果可视化}
+
+为直观展示遮蔽攻击对模型决策的影响，本节给出四类典型可视化（详细图集见附录与 \texttt{paper\_figures/v2/}）：
+
+\textbf{（1）最小遮蔽成功案例。}图~\ref{fig:viz_min_std_adasal}~展示了在标准模型上，Adaptive-Saliency 攻击仅遮蔽 21$\sim$45 像素（占图像 2.7\%$\sim$5.7\%）即可让模型完全误判，且置信度往往达到 90\% 以上，体现了"肉眼难辨但模型误判"的攻击隐蔽性。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{figures/v2/min/min_Standard_AdaSal.png}
+  \caption{标准模型上 Adaptive-Saliency 攻击的最小遮蔽成功案例：仅 21$\sim$45 像素即让模型误判}
+  \label{fig:viz_min_std_adasal}
+\end{figure}
+
+\textbf{（2）显著性与遮蔽位置的关系——命中率定义。}定义"\textbf{命中率}"为遮蔽像素中落入归因图 Top-30 高重要性像素的比例：
+\begin{equation}
+  \text{HitRate} = \frac{|\mathcal{M} \cap \mathcal{H}|}{|\mathcal{M}|}, \qquad
+  \mathcal{H} = \{\text{显著性归因前30的像素}\},\ \mathcal{M} = \{\text{遮蔽像素}\}
+\end{equation}
+该指标越高，说明攻击越精准地命中了模型决策依赖的关键区域。图~\ref{fig:viz_sal_std}~展示了标准模型上 Adaptive-Saliency 攻击的命中率（图中标注于"遮蔽位置"行），平均命中率超过 70\%。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/sal_overlay/sal_Standard.png}
+  \caption{Standard 模型上 Adaptive-Saliency 攻击的显著性与遮蔽位置关系。第一行原图；第二行 Saliency 热图；第三行遮蔽位置（标注命中率）；第四行攻击结果。攻击强度参考表~\ref{tab:attack_compare}：$N=5,R=3$ 下标准模型准确率被压低至 34.33\%}
+  \label{fig:viz_sal_std}
+\end{figure}
+
+\textbf{（3）四种攻击对比。}图~\ref{fig:viz_4atk_std}~展示同一样本在 FixedSal/AdaSal/FixedIG/AdaIG 四种攻击下的效果（仅展示成功攻击案例）。可观察到 IG 系列由于归因更精准，遮蔽位置更集中于笔画核心；Adaptive 系列因早停机制使遮蔽量更少。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/4atk/4atk_Standard.png}
+  \caption{标准模型上四种遮蔽攻击对比（仅展示攻击成功样本）}
+  \label{fig:viz_4atk_std}
+\end{figure}
+
+\textbf{（4）多模型遮蔽鲁棒性对比。}图~\ref{fig:viz_cmp_adasal}~在固定 Adaptive-Saliency 攻击下，对比 Standard、PGD-AT、FGSM-AT、AdaSal-AT、AdaIG-AT、Mix-AT(Sal+PGD)、Mix-AT(IG+PGD) 七种模型的攻击效果，遮蔽位置以红块叠加。可见经过显著性遮蔽对抗训练（AdaSal-AT、Mix-AT）的模型在被同一攻击作用后仍能正确分类，而 Standard、PGD-AT、FGSM-AT 普遍被攻破。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/v2/model_cmp/cmp_AdaSal.png}
+  \caption{Adaptive-Saliency 攻击下七种模型的对比（红块=遮蔽位置；标题颜色：绿=防御成功，红=被攻破）}
+  \label{fig:viz_cmp_adasal}
+\end{figure}
+
+\textbf{（5）对抗训练模型上的最小遮蔽对比。}图~\ref{fig:viz_min_pgdat}~与图~\ref{fig:viz_min_adasalat}~分别展示了 PGD-AT 模型与 Adaptive-Saliency-AT 模型上的最小遮蔽成功案例。可见 PGD-AT 模型仍可被遮蔽攻击攻破，但所需遮蔽像素显著增加；而 AdaSal-AT 模型对同类攻击具备更强鲁棒性，仅在极少数样本上被攻击成功。
+
+\begin{figure}[htbp]
+  \centering
+  \subfigure[PGD-AT 上的 Adaptive-Saliency 最小成功案例]{\includegraphics[width=0.46\textwidth]{figures/v2/min/min_PGDAT_AdaSal.png}}
+  \hfill
+  \subfigure[PGD-AT 上的 Adaptive-IG 最小成功案例]{\includegraphics[width=0.46\textwidth]{figures/v2/min/min_PGDAT_AdaIG.png}}
+  \caption{PGD-AT 模型上不同 Adaptive 攻击的最小遮蔽成功案例对比}
+  \label{fig:viz_min_pgdat}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \subfigure[AdaSal-AT 上的 Adaptive-Saliency 最小成功案例]{\includegraphics[width=0.46\textwidth]{figures/v2/min/min_AdaSalAT_AdaSal.png}}
+  \hfill
+  \subfigure[AdaSal-AT 上的 Adaptive-IG 最小成功案例]{\includegraphics[width=0.46\textwidth]{figures/v2/min/min_AdaSalAT_AdaIG.png}}
+  \caption{Adaptive-Saliency-AT 模型上不同 Adaptive 攻击的最小遮蔽成功案例对比，可见 AdaSal-AT 模型显著提高了攻击所需的遮蔽量}
+  \label{fig:viz_min_adasalat}
+\end{figure}
+
+\textbf{（6）Saliency 命中率在不同模型上的迁移趋势。}图~\ref{fig:viz_sal_pgdat}~与图~\ref{fig:viz_sal_adasalat}~给出了 PGD-AT 与 AdaSal-AT 模型上的显著性热图与遮蔽位置叠加。对照标准模型可观察到：PGD-AT 的 Saliency 热图较为分散且命中率较低，反映其梯度被部分掩蔽（详见第~\ref{sec:transfer_anomaly}节）；AdaSal-AT 的 Saliency 热图则更加聚焦于稳健笔画区域，攻击所获得的遮蔽位置往往无法击穿，从而导致 HitRate 降低、攻击失败率上升。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/sal_overlay/sal_PGDAT.png}
+  \caption{PGD-AT 模型上 Adaptive-Saliency 攻击的显著性与遮蔽位置关系}
+  \label{fig:viz_sal_pgdat}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/sal_overlay/sal_AdaSalAT.png}
+  \caption{Adaptive-Saliency-AT 模型上 Adaptive-Saliency 攻击的显著性与遮蔽位置关系，可见对抗训练后显著性图聚焦更稳健、攻击命中率明显下降}
+  \label{fig:viz_sal_adasalat}
+\end{figure}
+
+\textbf{（7）四种攻击在对抗训练模型上的差异。}图~\ref{fig:viz_4atk_pgdat}~$\sim$~图~\ref{fig:viz_4atk_adaigat}~展示了在 PGD-AT、AdaSal-AT、AdaIG-AT 上四种遮蔽攻击的可视化对比。结合表~\ref{tab:result_occ}~可知：PGD-AT 在面对自适应遮蔽时鲁棒性显著下降，而 AdaSal-AT 与 AdaIG-AT 由于训练时显式接触了"显著性遮蔽"样本，对所有四种遮蔽攻击均表现出最优防御。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/4atk/4atk_PGDAT.png}
+  \caption{PGD-AT 模型上四种遮蔽攻击对比}
+  \label{fig:viz_4atk_pgdat}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/4atk/4atk_AdaSalAT.png}
+  \caption{Adaptive-Saliency-AT 模型上四种遮蔽攻击对比}
+  \label{fig:viz_4atk_adasalat}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/4atk/4atk_AdaIGAT.png}
+  \caption{Adaptive-IG-AT 模型上四种遮蔽攻击对比}
+  \label{fig:viz_4atk_adaigat}
+\end{figure}
+
+\textbf{（8）固定攻击下的多模型对比。}图~\ref{fig:viz_cmp_fixedsal}~与图~\ref{fig:viz_cmp_fixedig}~分别展示 FixedSal 与 FixedIG 攻击下七种模型的对比。可见 Fixed 攻击在多数对抗训练模型上整体偏弱（红块呈现高度聚集），与第~\ref{sec:transfer_anomaly}节"块重叠"分析吻合。图~\ref{fig:viz_cmp_adaig}~进一步展示 AdaIG 攻击下的多模型对比：除 AdaSal-AT 与 AdaIG-AT 之外，多数模型仍被攻破，其中 PGD-AT 出现明显失效，验证了 IG 类攻击对梯度掩蔽模型的强穿透力。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/v2/model_cmp/cmp_FixedSal.png}
+  \caption{Fixed-Saliency 攻击下七种模型的对比}
+  \label{fig:viz_cmp_fixedsal}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/v2/model_cmp/cmp_FixedIG.png}
+  \caption{Fixed-IG 攻击下七种模型的对比}
+  \label{fig:viz_cmp_fixedig}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/v2/model_cmp/cmp_AdaIG.png}
+  \caption{Adaptive-IG 攻击下七种模型的对比，PGD-AT 与 FGSM-AT 普遍失效}
+  \label{fig:viz_cmp_adaig}
+\end{figure}
+
+\textbf{（9）自适应攻击的内部演化过程。}图~\ref{fig:viz_ainner_adasal_std}~与图~\ref{fig:viz_ainner_adaig_std}~分别展示标准模型上 Adaptive-Saliency 与 Adaptive-IG 攻击在迭代过程中的中间状态。每一行对应一个样本，从左至右展示遮蔽随迭代次数 $n$ 的渐进增长过程，可清晰看到：（i）多数样本在 $n\le 3$ 时即被攻破；（ii）IG 系列遮蔽位置较 Saliency 系列更集中于笔画核心；（iii）早停机制有效避免了对易攻击样本的过度遮蔽。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/ada_inner/ainner_AdaSal_Standard.png}
+  \caption{标准模型上 Adaptive-Saliency 攻击的内部演化（每行展示同一样本随迭代 $n$ 增长的遮蔽过程）}
+  \label{fig:viz_ainner_adasal_std}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/ada_inner/ainner_AdaIG_Standard.png}
+  \caption{标准模型上 Adaptive-IG 攻击的内部演化}
+  \label{fig:viz_ainner_adaig_std}
+\end{figure}
+
+\textbf{（10）Fixed 与 Adaptive 遮蔽位置叠加对比。}图~\ref{fig:viz_fva_sal_std}~与图~\ref{fig:viz_fva_ig_std}~展示在标准模型上、相同 top-$k$/$N$ 设置下，Fixed 与 Adaptive 选取的遮蔽位置差异：Fixed 选位高度集中且彼此重叠（与表~\ref{tab:mask_overlap_stats}~中 52.10\% 重叠率一致）；Adaptive 借助逐次评估将遮蔽分布到更多互补区域，从而以更小的实际像素数完成攻击。图~\ref{fig:viz_fva_sal_pgdat}~与图~\ref{fig:viz_fva_ig_pgdat}~给出 PGD-AT 上的对应对比，可观察到该模型在 Saliency 视角下的"块重叠"问题更严重（白盒 Fixed 选位极度集中），这正是迁移 PGD/Fixed 攻击在该模型上反而强于白盒攻击的核心原因。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/fix_vs_ada/fva_Saliency_Standard.png}
+  \caption{标准模型：Fixed-Saliency vs Adaptive-Saliency 遮蔽位置对比}
+  \label{fig:viz_fva_sal_std}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/fix_vs_ada/fva_IG_Standard.png}
+  \caption{标准模型：Fixed-IG vs Adaptive-IG 遮蔽位置对比}
+  \label{fig:viz_fva_ig_std}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/fix_vs_ada/fva_Saliency_PGDAT.png}
+  \caption{PGD-AT 模型：Fixed-Saliency vs Adaptive-Saliency 遮蔽位置对比，Fixed 选位的高重叠现象尤为明显}
+  \label{fig:viz_fva_sal_pgdat}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/v2/fix_vs_ada/fva_IG_PGDAT.png}
+  \caption{PGD-AT 模型：Fixed-IG vs Adaptive-IG 遮蔽位置对比}
+  \label{fig:viz_fva_ig_pgdat}
+\end{figure}
+
 \subsection{固定遮蔽与自适应遮蔽的机制差异分析}
 
 实验发现，固定遮蔽攻击（$k=9$）在标准模型上的攻击效果（71.19\%）显著弱于自适应遮蔽攻击（34.33\%），且在部分对抗训练模型上甚至出现\textbf{迁移攻击效果反超白盒攻击}的反直觉现象（详见第\ref{sec:transfer_anomaly}节）。本节从遮蔽机制的实现细节出发，量化解释这一差异。
@@ -385,6 +558,33 @@ Mix-AT(Saliency)策略在干净准确率（98.91\%）、梯度攻击防御（FGS
 \end{figure}
 
 \textbf{方法论启示。}两种归因方法对梯度掩蔽的鲁棒性差异具有重要的评估意义：单点梯度（Saliency）虽然理论精度较低，但因仅使用输入点的局部梯度而对梯度掩蔽相对鲁棒；路径积分（IG）虽然理论精度更高，却因依赖完整路径上的梯度信号而对梯度掩蔽极度敏感。因此，仅依赖 IG 归因评估对抗训练模型的鲁棒性时，可能因归因失真而\textbf{高估}模型的真实防御能力。鲁棒性评估协议应同时采用多种归因方法。
+
+\subsection{遮蔽攻击与梯度攻击的相互抵消趋势} \label{sec:cancellation}
+
+Duan等人\cite{duan2023inequality}指出，$L_\infty$ 对抗性训练会导致模型决策依赖发生"特征不均等"（feature inequality）现象——少数像素的归因显著放大，模型对显著像素的依赖性增强。该现象意味着遮蔽攻击与梯度类对抗性训练可能存在\textbf{相互抵消趋势}：针对遮蔽攻击，遮蔽对抗训练 (Occlusion-AT) 的鲁棒性高于标准模型，而梯度对抗训练 (PGD-AT、FGSM-AT) 反而低于（或与标准模型持平）；针对梯度类攻击，规律完全相反。本文实验中这一现象在 Saliency 归因下得到了清晰体现，但在 IG 归因下未呈现。具体数据汇总于表~\ref{tab:cancel}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{遮蔽攻击与梯度攻击的相互抵消趋势（准确率\%）}
+  \label{tab:cancel}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccc|cccc}
+    \toprule
+     & \multicolumn{4}{c|}{\textbf{遮蔽攻击 (Saliency 归因)}} & \multicolumn{4}{c}{\textbf{梯度攻击}} \\
+    \textbf{模型} & FixSal-9 & AdaSal & FixIG-9 & AdaIG & FGSM & PGD & C\&W & Clean \\
+    \midrule
+    Standard         & 71.19 & 34.33 & 28.64 & 16.66 & 79.46 & 33.34 & 33.37 & 99.00 \\
+    PGD-AT           & 70.11 & 30.12 & 49.17 & 25.42 & 96.10 & 94.95 & 95.05 & 99.30 \\
+    FGSM-AT          & 73.73 & 33.90 & 54.14 & 25.55 & 95.68 & 90.64 & 90.83 & 99.20 \\
+    AdaSal-AT(N=5,R=3) & \textbf{98.43} & \textbf{94.30} & 64.74 & 47.18 &  41.56 &  4.78 &  5.73 & 98.73 \\
+    AdaIG-AT (N=5,R=3) & 98.36 & 92.02 & 90.42 & \textbf{87.03} &  39.01 &  0.20 &  0.24 & 98.48 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\textbf{Saliency 攻击下的抵消趋势（成立）。}对 FixSal-9 攻击：AdaSal-AT 98.43\%~$\gg$~Standard 71.19\%~$\geq$~PGD-AT 70.11\%；对 AdaSal 攻击：AdaSal-AT 94.30\%~$\gg$~Standard 34.33\%~$\geq$~PGD-AT 30.12\%。两种 Saliency 遮蔽攻击下，PGD-AT 的准确率均略低于或持平 Standard，验证了"梯度对抗训练对显著性遮蔽攻击不仅无防御提升，反而略有退化"的相互抵消趋势。同时，Adaptive-Saliency-AT 在梯度攻击下显著退化（PGD: 4.78\%~$\ll$~Standard 33.34\%），与 Duan 等人\cite{duan2023inequality}的特征不均等理论一致。
+
+\textbf{IG 攻击下的抵消趋势（不成立）。}对 FixIG-9 攻击：PGD-AT (49.17\%) 与 FGSM-AT (54.14\%) 均\textbf{大幅高于}Standard (28.64\%)；对 AdaIG 攻击：PGD-AT (25.42\%) 与 FGSM-AT (25.55\%) 也均高于 Standard (16.66\%)。这意味着对 IG 归因引导的遮蔽攻击，梯度对抗训练\textbf{反而提供了防御}，与抵消趋势相悖。其根本原因即第~\ref{sec:saliency_vs_ig}~节所揭示的：IG 在 PGD-AT 模型上受梯度掩蔽干扰而归因失真，使得攻击未能命中真正的关键像素。这一不成立现象本身具有诊断意义——它提示评估协议需要同时使用 Saliency 与 IG 两种归因方法，方可识别梯度掩蔽对鲁棒性评估的扭曲。
 
 \section{参数敏感性分析}
 

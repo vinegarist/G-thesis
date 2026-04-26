@@ -47,6 +47,7 @@
             "env": {}
         }
     ],
+    "latex-workshop.view.pdf.internal.synctex.keybinding": "ctrl-click",
     "latex-workshop.latex.autoBuild.run": "onSave",
     "latex-workshop.view.pdf.viewer": "tab",
     "latex-workshop.latex.clean.fileTypes": [
@@ -68,7 +69,6 @@
         "*.fls",
         "*.log",
         "*.fdb_latexmk",
-        "*.synctex.gz",
         "*.bcf",
         "*.run.xml"
     ]
