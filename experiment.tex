@@ -191,6 +191,47 @@
 
 值得注意的是，自适应IG遮蔽攻击（16.66\%）的攻击强度甚至超过了PGD攻击（33.34\%）和C\&W攻击（33.37\%），表明基于精确归因的遮蔽攻击在攻击潜力上可超越主流梯度攻击。然而，这一优势伴随着约50倍的计算开销增加，因此IG遮蔽攻击更适合作为离线评估工具而非对抗性训练中的在线攻击生成手段。
 
+\subsection{固定遮蔽与自适应遮蔽的机制差异分析}
+
+实验发现，固定遮蔽攻击（$k=9$）在标准模型上的攻击效果（71.19\%）显著弱于自适应遮蔽攻击（34.33\%），且在部分对抗训练模型上甚至出现\textbf{迁移攻击效果反超白盒攻击}的反直觉现象（详见第\ref{sec:transfer_anomaly}节）。本节从遮蔽机制的实现细节出发，量化解释这一差异。
+
+\textbf{Fixed 遮蔽的"块重叠"问题。}固定遮蔽攻击一次性选择显著性卷积响应最强的 top-$k$（$k=9$）像素中心，并以固定大小（$3\times 3$）的卷积核为每个中心生成遮蔽块。由于 top-$k$ 个最显著像素在空间上往往集中分布于数字笔画的相同邻域，它们生成的 $3\times 3$ 遮蔽块极易彼此重叠，使得最终的有效遮蔽面积远小于理论上限 $k\times s^2 = 9\times 9 = 81$ 像素。
+
+\textbf{Adaptive 遮蔽的"逐次评估+早停"机制。}自适应遮蔽攻击通过 $n=1\ldots N$、$r=1\ldots R$ 的渐进式增长，每完成一次遮蔽即通过模型前向传播判断该样本是否被攻击成功；一旦预测改变即停止对该样本的进一步遮蔽。这一机制有两个关键作用：（1）由于半径 $r$ 从1开始逐步增大，在小半径阶段不同区域的遮蔽块几乎不重叠；（2）逐样本早停保证了使用最小遮蔽量即攻击成功，对易攻击样本仅需极少遮蔽即终止。
+
+\textbf{量化验证。}以5个不同类别的MNIST样本为例，统计两种遮蔽策略实际写入图像的像素数（详见图~\ref{fig:fixed_vs_adaptive}）：
+
+\begin{table}[htbp]
+  \centering
+  \caption{Fixed 与 Adaptive 遮蔽实际写入像素数的对比（标准模型）}
+  \label{tab:mask_overlap_stats}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{指标} & \textbf{Fixed ($k$=9)} & \textbf{Adaptive ($N$=5,$R$=3)} & \textbf{说明} \\
+    \midrule
+    理论上限像素数  & 81  & 245 & 不考虑边界与重叠 \\
+    实际平均遮蔽像素 & 38.80 & 47.40 & 按 5 样本均值统计 \\
+    重叠/未触达比率 & 52.10\% & ---   & Fixed 平均一半位置被重叠浪费 \\
+    单样本最小遮蔽   & 35  & 21  & Adaptive 早停效率显著 \\
+    单样本最大遮蔽   & 45  & 64  & Adaptive 对难样本可加大力度 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+实验结果显示，Fixed 攻击的 9 个 $3\times 3$ 遮蔽块由于显著像素的空间聚集性发生大面积重叠，平均\textbf{有效遮蔽面积仅占理论上限的 47.9\%}（38.80/81），而Adaptive策略借助早停机制以平均 47.40 像素即完成攻击，且各样本之间遮蔽量差异显著（21$\sim$64像素），体现出"按需分配"的攻击经济性。这一机制差异从根本上解释了：
+
+\begin{enumerate}
+  \item \textbf{为什么 Adaptive 攻击比 Fixed 强：}Adaptive 实际有效遮蔽面积更大，且每一次新增遮蔽都基于"当前模型仍预测正确"的最新反馈定位关键区域，避免了 Fixed 一次性 top-$k$ 选取的盲目性。
+  \item \textbf{Fixed 攻击在某些对抗训练模型上出现"迁移强于白盒"的反直觉现象的部分原因：}由于 Fixed 在白盒目标模型上选取的 top-$k$ 像素高度集中（重叠率超过50\%），有效遮蔽面积严重缩水；而迁移攻击在 Standard 替代模型上选取像素时，因 Standard 的显著性图分布更分散（详见第\ref{sec:saliency_vs_ig}节），重叠率反而较低，迁移到目标模型后实际遮蔽面积更大、攻击更强。
+\end{enumerate}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/exp_fixed_vs_adaptive.pdf}
+  \caption{Fixed（$k=9$，$3\times 3$）与 Adaptive（$N=5$，$R=3$）遮蔽机制差异可视化。第二行红色高亮显示 Fixed 9 个遮蔽块的累计覆盖次数，亮红色区域为多块重叠位置；第三、四行展示两种策略的最终遮蔽效果与实际像素数。Fixed 由于显著像素空间聚集导致 52.10\% 的有效面积被重叠浪费，而 Adaptive 通过逐次评估与早停以更小代价定位更分散的关键区域。}
+  \label{fig:fixed_vs_adaptive}
+\end{figure}
+
 
 \section{对抗性训练防御效果对比}
 
@@ -306,6 +347,45 @@ Mix-AT(Saliency)策略在干净准确率（98.91\%）、梯度攻击防御（FGS
 
 这一发现具有重要的方法论意义：在评估对抗训练模型的遮蔽鲁棒性时，应同时使用多种归因方法进行攻击，以避免因单一归因方法受梯度掩蔽干扰而高估模型的真实防御能力。
 
+\subsection{两种归因方法的可视化对比与归因集中度量化} \label{sec:saliency_vs_ig}
+
+为更直观地理解上述差异化抵消效应的微观机制，本节对同一样本在 Standard 与 PGD-AT 两种模型上分别可视化 Saliency 归因图（单次反向传播，$\partial f_y/\partial x$）与 IG 归因图（路径积分，$n_{\text{steps}}=50$，基线为零图），并量化"归因集中度"指标——定义为归因绝对值排名前9像素之和占归因总和的比例：
+
+\begin{equation}
+  \text{Concentration} = \frac{\sum_{i=1}^{9} |a_{(i)}|}{\sum_{i=1}^{H\cdot W} |a_i|},
+\end{equation}
+
+其中 $a_{(i)}$ 表示按绝对值降序排列的归因图第 $i$ 个像素。集中度越高表示模型决策依赖的像素越少。在4个MNIST样本上的统计结果如表~\ref{tab:attribution_concentration}~所示。
+
+\begin{table}[htbp]
+  \centering
+  \caption{两种归因方法在 Standard 与 PGD-AT 模型上的集中度对比}
+  \label{tab:attribution_concentration}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{归因方法} & \textbf{Standard} & \textbf{PGD-AT} & \textbf{相对变化倍数} \\
+    \midrule
+    Saliency（梯度显著性） & 0.064 & 0.157 & $\times 2.47$ \\
+    IG（路径积分，50步）   & 0.253 & 0.281 & $\times 1.11$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+从表~\ref{tab:attribution_concentration}~可见两个关键现象：
+
+\textbf{现象一：PGD-AT 使 Saliency 归因显著集中（2.47倍）。}标准模型上 Saliency 归因相对分散（集中度0.064），而 PGD-AT 训练后 Saliency 归因集中度跃升至 0.157，与 Duan 等人\cite{duan2023inequality}发现的"$L_\infty$对抗性训练导致特征归因不均等（inequality）"现象一致。此时 PGD-AT 模型将决策依赖压缩到极少数像素，一旦这些像素被准确遮蔽，模型即丧失判别能力，因此 PGD-AT 对显著性遮蔽攻击的防御能力反而略低于 Standard（70.11\% vs.\ 71.19\%）。
+
+\textbf{现象二：PGD-AT 对 IG 归因的影响微弱（1.11倍）。}IG 归因的集中度在 PGD-AT 上仅小幅上升（0.253→0.281），远低于 Saliency 的变化幅度。这并非意味着 IG 在 PGD-AT 上仍能精确定位关键像素，而恰恰相反——梯度掩蔽使从基线到输入的50步路径上的梯度信号大量失真，导致 IG 归因图\textbf{系统性偏离}真正决定模型预测的关键像素，集中度的"增长"实际反映了归因"漂移"到了非关键位置。这一漂移在视觉上表现为 IG 热图覆盖范围广泛、缺乏针对性，使得基于 IG 的遮蔽攻击在 PGD-AT 上效力大幅下降（49.17\% vs.\ Standard 28.64\%，即攻击成功率下降超过20个百分点）。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/exp_saliency_vs_ig.pdf}
+  \caption{Saliency 与 IG 归因图在 Standard 与 PGD-AT 模型上的对比。第二、三行为 Saliency 归因热图，可观察到 PGD-AT 模型上 Saliency 归因明显聚焦到笔画边缘的少数像素（不均等现象）；第四、五行为 IG 归因热图，PGD-AT 模型上 IG 归因覆盖范围分散且偏离笔画核心，反映梯度掩蔽对路径积分归因的系统性干扰。}
+  \label{fig:saliency_vs_ig_viz}
+\end{figure}
+
+\textbf{方法论启示。}两种归因方法对梯度掩蔽的鲁棒性差异具有重要的评估意义：单点梯度（Saliency）虽然理论精度较低，但因仅使用输入点的局部梯度而对梯度掩蔽相对鲁棒；路径积分（IG）虽然理论精度更高，却因依赖完整路径上的梯度信号而对梯度掩蔽极度敏感。因此，仅依赖 IG 归因评估对抗训练模型的鲁棒性时，可能因归因失真而\textbf{高估}模型的真实防御能力。鲁棒性评估协议应同时采用多种归因方法。
+
 \section{参数敏感性分析}
 
 本节系统分析自适应遮蔽攻击与防御策略中各关键参数对实验结果的影响，以指导实际应用中的参数选择。
@@ -398,9 +478,18 @@ Mix-AT(Saliency)策略在干净准确率（98.91\%）、梯度攻击防御（FGS
 
 对于遮蔽攻击而言，白盒与迁移场景的差距相对较小：自适应遮蔽攻击迁移准确率（91.96\%）与白盒准确率（94.30\%）相差仅2.34个百分点。这表明遮蔽攻击依赖显著性图的特征定位，其迁移能力较强——不同模型的显著性图在关键决策区域上具有一定的跨模型一致性，使得遮蔽攻击在迁移场景下同样保持较高的攻击效力，进一步验证了针对遮蔽攻击进行专项防御的必要性。
 
-\subsection{梯度掩蔽现象分析}
+\subsection{梯度掩蔽现象分析} \label{sec:transfer_anomaly}
 
-Adaptive-Saliency-AT(N=5,R=3)在白盒PGD攻击下准确率仅为4.63\%，远低于同类混合训练策略（Mix-AT系列均在91\%以上），但对迁移PGD攻击的准确率却高达93.98\%，两者差距超过89个百分点。梯度掩蔽是指模型通过某种机制使攻击者无法获得有效的梯度方向，在白盒攻击下表观上极度脆弱，但对使用替代模型梯度的迁移攻击则保持较强的鲁棒性。
+Adaptive-Saliency-AT(N=5,R=3)在白盒PGD攻击下准确率仅为4.63\%，远低于同类混合训练策略（Mix-AT系列均在91\%以上），但对迁移PGD攻击的准确率却高达93.98\%，两者差距超过89个百分点。图~\ref{fig:transfer_anomaly}~以并列柱状图直观展示了这一极端不对称：四种攻击方法中，三种梯度类攻击（FGSM、PGD、C\&W）的迁移准确率均显著高于白盒准确率（差距+53.82$\sim$+90.81个百分点），而自适应遮蔽攻击的迁移与白盒差距仅−2.34个百分点，呈现完全不同的规律。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figures/exp_transfer_anomaly.pdf}
+  \caption{Adaptive-Saliency-AT(N=5,R=3) 在白盒攻击与迁移攻击下的准确率对比。左图为四种攻击方法的并列对比，右图为"迁移−白盒"差距：梯度类攻击呈现极大的正向差距（+53.82$\sim$+90.81pp），符合梯度掩蔽的典型特征；遮蔽攻击差距接近零（−2.34pp），表明其攻击有效性不依赖目标模型的局部梯度信息，具有较强的跨模型迁移能力。}
+  \label{fig:transfer_anomaly}
+\end{figure}
+
+梯度掩蔽是指模型通过某种机制使攻击者无法获得有效的梯度方向，在白盒攻击下表观上极度脆弱，但对使用替代模型梯度的迁移攻击则保持较强的鲁棒性。
 
 从Adaptive-Saliency-AT的训练机制来看，其训练过程仅使用自适应遮蔽攻击（无梯度攻击成分），这可能导致模型决策边界在梯度方向上形成了不规则的几何结构——模型虽然学会了抵御遮蔽干扰，但其损失曲面在$L_p$范数方向上可能存在梯度消失或梯度不连续的区域，使得PGD攻击无法沿有效方向迭代逼近对抗样本。而来自标准模型的迁移梯度方向与目标模型的实际敏感方向存在偏差，反而无法精确命中脆弱区域，导致迁移攻击效果显著弱于白盒攻击。
 
