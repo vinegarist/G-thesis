@@ -42,7 +42,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "del /q *.aux *.out *.blg *.toc *.bbl *.bcf *.log *.fls *.fdb_latexmk *.synctex.gz 2>nul"
+                "del /q *.aux *.out *.blg *.toc *.bbl *.bcf *.log *.fls *.fdb_latexmk 2>nul"
             ],
             "env": {}
         }

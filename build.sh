@@ -7,7 +7,7 @@ echo "========================================"
 
 echo ""
 echo "[1/4] 第一遍 XeLaTeX 编译..."
-xelatex main
+xelatex -synctex=1 main
 if [ $? -ne 0 ]; then
     echo "错误: XeLaTeX 编译失败"
     exit 1
@@ -23,7 +23,7 @@ fi
 
 echo ""
 echo "[3/4] 第二遍 XeLaTeX 编译..."
-xelatex main
+xelatex -synctex=1 main
 if [ $? -ne 0 ]; then
     echo "错误: XeLaTeX 编译失败"
     exit 1
@@ -31,7 +31,7 @@ fi
 
 echo ""
 echo "[4/4] 第三遍 XeLaTeX 编译..."
-xelatex main
+xelatex -synctex=1 main
 if [ $? -ne 0 ]; then
     echo "错误: XeLaTeX 编译失败"
     exit 1

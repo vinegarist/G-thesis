@@ -5,7 +5,7 @@ echo ========================================
 
 echo.
 echo [1/4] XeLaTeX pass 1...
-xelatex main
+xelatex -synctex=1 main
 if %errorlevel% neq 0 (
     echo Error: XeLaTeX failed
     pause
@@ -23,7 +23,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [3/4] XeLaTeX pass 2...
-xelatex main
+xelatex -synctex=1 main
 if %errorlevel% neq 0 (
     echo Error: XeLaTeX failed
     pause
@@ -32,7 +32,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [4/4] XeLaTeX pass 3...
-xelatex main
+xelatex -synctex=1 main
 if %errorlevel% neq 0 (
     echo Error: XeLaTeX failed
     pause

@@ -1,8 +1,8 @@
 compile:
-	xelatex main
+	xelatex -synctex=1 main
 	biber main
-	xelatex main
-	xelatex main
+	xelatex -synctex=1 main
+	xelatex -synctex=1 main
 	rm *.aux *.out *.blg *.toc *.bbl *.bcf
 
 clean:
