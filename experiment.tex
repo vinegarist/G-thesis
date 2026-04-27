@@ -129,13 +129,13 @@
 
 \section{遮蔽攻击效果评估}
 
-\subsection{自适应遮蔽攻击效果分析}
+\subsection{遮蔽攻击效果分析}
 
-为验证本文提出的遮蔽攻击方法的有效性，首先在未经对抗性训练的标准模型（Standard）上评估自适应遮蔽攻击的攻击强度，实验结果如表~\ref{tab:attack_compare}~所示。
+为验证本文提出的遮蔽攻击方法的有效性，首先在未经对抗性训练的标准模型（Standard）上评估固定遮蔽攻击和自适应遮蔽攻击的攻击强度，实验结果如表~\ref{tab:attack_compare}~所示。
 
 \begin{table}[htbp]
   \centering
-  \caption{自适应遮蔽攻击在标准模型上的攻击效果}
+  \caption{原始梯度遮蔽攻击在标准模型上的攻击效果对比}
   \label{tab:attack_compare}
   \begin{tabular}{llr}
     \toprule
@@ -143,27 +143,44 @@
     \midrule
     无攻击（干净样本）  & ---              & 99.00 \\
     \midrule
-    自适应原始梯度攻击 & $N=3$，$R=3$    & 49.45 \\
-    自适应原始梯度攻击 & $N=5$，$R=3$    & 34.33 \\
-    自适应原始梯度攻击 & $N=7$，$R=3$    & 25.08 \\
-    自适应原始梯度攻击 & $N=10$，$R=3$   & 15.95 \\
+    固定原始梯度遮蔽攻击 & $k=3$，kernel\_size=3    & 86.82 \\
+    固定原始梯度遮蔽攻击 & $k=5$，kernel\_size=3    & 80.99 \\
+    固定原始梯度遮蔽攻击 & $k=9$，kernel\_size=3    & 71.19 \\
+    固定原始梯度遮蔽攻击 & $k=15$，kernel\_size=3   & 59.78 \\
+    \midrule
+    自适应原始梯度遮蔽攻击 & $N=3$，$R=3$    & 49.45 \\
+    自适应原始梯度遮蔽攻击 & $N=5$，$R=3$    & 34.33 \\
+    自适应原始梯度遮蔽攻击 & $N=7$，$R=3$    & 25.08 \\
+    自适应原始梯度遮蔽攻击 & $N=10$，$R=3$   & 15.95 \\
+    \midrule
+    自适应原始梯度遮蔽攻击 & $N=5$，$R=2$    & 49.15 \\
+    自适应原始梯度遮蔽攻击 & $N=5$，$R=4$    & 23.91 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-实验结果表明，自适应原始梯度显著性图（$N=5$，$R=3$）在将准确率压至34.33\%时，仅需遮蔽至多5个圆形区域。随着迭代次数$N$从3增至10，准确率从49.45\%进一步降至15.95\%，说明多轮自适应遮蔽能有效规避模型特征迁移，实现更彻底的关键区域剥除。
+实验结果表明，固定遮蔽攻击与自适应遮蔽攻击均能有效降低模型准确率。
 
-\subsection{与梯度类攻击强度对比}
+从参数敏感性角度分析：（1）固定攻击的$k$参数从3增至15，准确率从86.82\%降至59.78\%，自适应攻击固定$R=3$时，$N$从3增至10，准确率从49.45\%降至15.95\%，表明增加遮蔽区域数可提升攻击强度；（2）自适应攻击固定$N=5$时，$R$从2增至4，准确率从49.15\%降至23.91\%，说明增大遮蔽半径同样能显著提升攻击强度。
 
-值得关注的是，自适应原始梯度显著性图（$N=5$，$R=3$）将标准模型准确率压低至34.33\%，与PGD攻击（33.34\%）和C\&W攻击（33.37\%）的攻击强度基本相当。这一结果具有重要意义：遮蔽攻击在不依赖任何$L_p$范数约束的条件下，仅通过遮蔽少数关键语义区域，即可达到与强梯度攻击相近的欺骗效果，充分说明显著性图所定位的关键区域确实是模型分类决策的核心依据。这也从侧面证明了专门针对遮蔽攻击设计防御策略的必要性——由于其攻击机理与梯度攻击截然不同，梯度防御方法对遮蔽攻击的防护存在本质性盲区。
+自适应原始梯度遮蔽攻击（$N=5$，$R=3$）将标准模型准确率压低至34.33\%，与PGD攻击（33.34\%）和C\&W攻击（33.37\%）的攻击强度基本相当。这一结果表明遮蔽攻击在不依赖任何$L_p$范数约束的条件下，仅通过遮蔽少数关键语义区域，即可达到与强梯度攻击相近的欺骗效果，充分说明显著性图所定位的关键区域确实是模型分类决策的核心依据。
 
-图~\ref{fig:mask_visualization}~展示了自适应原始梯度显著性图对不同手写数字样本的攻击效果。可以观察到，遮蔽区域（黑色部分）精确地覆盖了模型用于识别数字的关键像素区域。随着参数$N$从5增至10，遮蔽面积增加，模型被剥夺的判别特征更多，攻击强度相应提升。
+图~\ref{fig:fixed_saliency_compare}~与图~\ref{fig:adaptive_saliency_compare}~分别展示了固定遮蔽攻击和自适应遮蔽攻击在标准模型上的可视化效果。
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.95\textwidth]{figures/exp_mask_visualization.pdf}
-  \caption{自适应原始梯度显著性图效果可视化：第一行为原始样本，第二行为$N=5, R=3$遮蔽效果，第三行为$N=10, R=3$遮蔽效果}
-  \label{fig:mask_visualization}
+  \includegraphics[width=0.95\textwidth]{figures/attack_compare/fixed_saliency_compare.png}
+  \caption{Fixed-Saliency遮蔽攻击效果可视化（标准模型）：不同$k$参数下的攻击结果，红色区域为遮蔽位置，标题显示预测结果、置信度及模型准确率}
+  \label{fig:fixed_saliency_compare}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \subfigure[固定$R=3$，变化$N$]{\includegraphics[width=0.48\textwidth]{figures/attack_compare/adaptive_saliency_N_compare.png}}
+  \hfill
+  \subfigure[固定$N=5$，变化$R$]{\includegraphics[width=0.48\textwidth]{figures/attack_compare/adaptive_saliency_R_compare.png}}
+  \caption{Adaptive-Saliency遮蔽攻击效果可视化（标准模型）：蓝色区域为遮蔽位置，左图展示迭代次数$N$的影响，右图展示遮蔽半径$R$的影响}
+  \label{fig:adaptive_saliency_compare}
 \end{figure}
 
 \subsection{基于梯度积分的遮蔽攻击效果分析}
@@ -186,9 +203,9 @@
   \end{tabular}
 \end{table}
 
-对比表~\ref{tab:attack_compare}~中原始梯度显著性图的结果，积分梯度归因遮蔽攻击在标准模型上的攻击强度显著更高：固定积分梯度归因遮蔽攻击（$k=9$）将准确率压至28.64\%，远低于同参数的固定原始梯度显著性图（71.19\%）；自适应积分梯度归因遮蔽攻击（$N=5$，$R=3$）将准确率压至16.66\%，同样远低于自适应原始梯度显著性图（34.33\%）。这一结果验证了梯度积分在归因精度上的优势——积分梯度归因通过路径积分捕获累积特征重要性，比单点梯度更准确地识别模型决策的关键像素，从而使遮蔽攻击的定位更为精准。
+对比表~\ref{tab:attack_compare}~中原始梯度显著性图的结果，积分梯度归因遮蔽攻击在标准模型上的攻击强度显著更高：固定积分梯度归因遮蔽攻击（$k=9$）将准确率压至28.64\%，远低于同参数的固定原始梯度显著性图（71.19\%）；自适应积分梯度归因遮蔽攻击（$N=5$，$R=3$）将准确率压至16.66\%，同样远低于自适应原始梯度显著性图（34.33\%）。这一结果验证了梯度积分在归因精度上的优势，即积分梯度归因通过路径积分计算累积特征重要性，比单点梯度更准确地识别模型决策的关键像素，从而使遮蔽攻击的定位更为精准。
 
-值得注意的是，自适应积分梯度归因遮蔽攻击（16.66\%）的攻击强度甚至超过了PGD攻击（33.34\%）和C\&W攻击（33.37\%），表明基于精确归因的遮蔽攻击在攻击潜力上可超越主流梯度攻击。然而，这一优势伴随着约50倍的计算开销增加，因此积分梯度归因遮蔽攻击更适合作为离线评估工具而非对抗性训练中的在线攻击生成手段。
+值得注意的是，自适应积分梯度归因遮蔽攻击（16.66\%）的攻击强度甚至超过了PGD攻击（33.34\%）和C\&W攻击（33.37\%），表明基于精确归因的遮蔽攻击在攻击潜力上可超越主流梯度攻击。
 
 \subsection{攻击效果可视化}
 
@@ -203,7 +220,7 @@
   \label{fig:viz_min_std_adasal}
 \end{figure}
 
-\textbf{（2）四种攻击对比。}图~\ref{fig:viz_4atk_std}~展示同一样本在 Fixed-Saliency / Adaptive-Saliency / Fixed-IG / Adaptive-IG 四种攻击下的效果（仅展示成功攻击案例）。可观察到 IG 系列由于归因更精准，遮蔽位置更集中于笔画核心；Adaptive 系列因早停机制使遮蔽量更少。
+\textbf{（2）四种攻击对比。}图~\ref{fig:viz_4atk_std}~展示同一样本在 Fixed-Saliency / Adaptive-Saliency / Fixed-IG / Adaptive-IG 四种攻击下的效果。可观察到 IG 系列由于归因更精准，遮蔽位置更集中于笔画核心，Adaptive 系列因早停机制一般使遮蔽量更少。
 
 \begin{figure}[htbp]
   \centering
@@ -212,7 +229,7 @@
   \label{fig:viz_4atk_std}
 \end{figure}
 
-\textbf{（4）多模型遮蔽鲁棒性对比。}图~\ref{fig:viz_cmp_adasal}~在固定 Adaptive-Saliency 攻击下，对比 Standard、PGD-AT、FGSM-AT、Adaptive-Saliency-AT、Adaptive-IG-AT、Mix-AT(Sal+PGD)、Mix-AT(IG+PGD) 七种模型的攻击效果，遮蔽位置以红块叠加。可见经过显著性遮蔽对抗训练（Adaptive-Saliency-AT、Mix-AT）的模型在被同一攻击作用后仍能正确分类，而 Standard、PGD-AT、FGSM-AT 普遍被攻破。
+\textbf{（3）多模型遮蔽鲁棒性对比。}图~\ref{fig:viz_cmp_adasal}~在 Adaptive-Saliency 攻击下，对比 Standard、PGD-AT、FGSM-AT、Adaptive-Saliency-AT、Adaptive-IG-AT、Mix-AT(Sal+PGD)、Mix-AT(IG+PGD) 七种模型的攻击效果，遮蔽位置以红块叠加。可见经过显著性遮蔽对抗训练（Adaptive-Saliency-AT、Mix-AT）的模型在被同一攻击作用后仍能正确分类，而 Standard、PGD-AT、FGSM-AT 普遍被攻破，反映了遮蔽攻击对传统梯度防御方法具有较强的攻击能力，而针对遮蔽攻击设计的对抗训练策略能有效提升模型的鲁棒性。
 
 \begin{figure}[htbp]
   \centering
@@ -221,7 +238,7 @@
   \label{fig:viz_cmp_adasal}
 \end{figure}
 
-\textbf{（5）对抗训练模型上的最小遮蔽对比。}图~\ref{fig:viz_min_pgdat}~与图~\ref{fig:viz_min_adasalat}~分别展示了 PGD-AT 模型与 Adaptive-Saliency-AT 模型上的最小遮蔽成功案例。可见 PGD-AT 模型仍可被遮蔽攻击攻破，但所需遮蔽像素显著增加；而 Adaptive-Saliency-AT 模型对同类攻击具备更强鲁棒性，仅在极少数样本上被攻击成功。
+\textbf{（4）对抗训练模型上的遮蔽攻击对比。}图~\ref{fig:viz_min_pgdat}~与图~\ref{fig:viz_min_adasalat}~分别展示了 PGD-AT 模型与 Adaptive-Saliency-AT 模型上的遮蔽攻击案例。可见 PGD-AT 模型仍可被遮蔽攻击攻破，但所需遮蔽像素显著增加；而 Adaptive-Saliency-AT 模型对同类攻击具备更强鲁棒性，仅在极少数样本上被攻击成功。
 
 \begin{figure}[htbp]
   \centering
