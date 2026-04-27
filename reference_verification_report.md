@@ -1,6 +1,6 @@
 # 参考文献与引用核查报告
 
-- 生成时间：2026-04-27 10:49:02
+- 生成时间：2026-04-27 11:43:28
 - Bib 文件：nkthesis.bib
 - 扫描 TeX 文件数：8
 - 联网校验：是
@@ -44,7 +44,7 @@
   - background.tex:123  (cite)
     - 上下文：Carlini和Wagner提出的C\&W攻击\cite{carlini2017cw}将对抗样本生成转化为连续优化问题，通过最小化以下目标函数来寻找扰动幅度尽可能小的高置信度对抗样本：
   - experiment.tex:90  (cite)
-    - 上下文：\begin{table}[htbp] \centering \caption{攻击方法参数配置} \label{tab:attack_config} \begin{tabular}{lp{3cm}p{5.5cm}} \toprule \textbf{攻击方法} & \textbf{关键参数} & \textbf{参数说明} \\ \midrule FGSM \cite{goodfellow2015fgsm} & $\varepsilon = 0.1$ & 单步梯度符号攻击，扰动在$L_\infty$球内 \\ PGD \cite{madry2018pgd} & $\varepsilon=0.1$，$\alpha=0.025$，迭代 …
+    - 上下文：\begin{table}[htbp] \centering \caption{攻击方法参数配置} \label{tab:attack_config} \begin{tabular}{lp{3cm}p{5.5cm}} \toprule \textbf{攻击方法} & \textbf{关键参数} & \textbf{参数说明} \\ \midrule FGSM \cite{goodfellow2015fgsm} & $\varepsilon = 0.1$ & 单步梯度符号攻击，扰动在$L_\infty$球内 \\ PGD \cite{madry2018pgd} & $\varepsilon=0.1$，$\alpha=0.025$，迭代20次 & 多步投影梯度下降攻击 \\ C\&W \cite{carlini …
   - experiment.tex:702  (cite)
     - 上下文：\textbf{遮蔽攻击的威胁实质。}本文提出的显著性图引导遮蔽攻击，在标准模型上达到与PGD~\cite{madry2018pgd}和C\&W~\cite{carlini2017cw}攻击相近的攻击强度，表明遮蔽攻击是一种不可忽视的独立威胁类型。与$L_p$范数攻击相比，遮蔽攻击无需满足全局扰动约束，具有更强的视觉可解释性：每个遮蔽区域对应模型实际依赖的判别性视觉特征，攻击的语义意义明确。在真实世界中，物理遮挡、光照阴影、局部污损等现象均与遮蔽攻击在形式上高度吻合，使其具备更强的现实威胁意义。
 
@@ -89,13 +89,13 @@
 - URL HTTP：200
 - 论文中引用位置：4 处
   - experiment.tex:515  (cite)
-    - 上下文：对于显著性遮蔽攻击，PGD-AT的防御准确率（固定$k$=9: 70.11\%）略低于Standard（71.19\%），自适应显著性遮蔽下亦然（PGD-AT: 30.12\% vs. Standard: 34.33\%），表明PGD对抗性训练不仅未能提升对显著性遮蔽的防御，反而使模型略微更加脆弱。这一"抵消效应"与Duan等人\cite{duan2023inequality}发现的$L_\infty$对抗性训练导致特征归因不均等（inequality）现象一致：PGD-AT迫使模型将决策依据集中于极少数像素，一旦这些像素被遮蔽，模型即丧失判别能力。
+    - 上下文：对于原始梯度显著性图，PGD-AT的防御准确率（固定$k$=9: 70.11\%）略低于Standard（71.19\%），自适应显著性遮蔽下亦然（PGD-AT: 30.12\% vs. Standard: 34.33\%），表明PGD对抗性训练不仅未能提升对显著性遮蔽的防御，反而使模型略微更加脆弱。这一"抵消效应"与Duan等人\cite{duan2023inequality}发现的$L_\infty$对抗性训练导致特征归因不均等（inequality）现象一致：PGD-AT迫使模型将决策依据集中于极少数像素，一旦这些像素被遮蔽，模型即丧失判别能力。
   - experiment.tex:549  (cite)
-    - 上下文：\textbf{现象一：PGD-AT 使 Saliency 归因显著集中（2.47倍）。}标准模型上 Saliency 归因相对分散（集中度0.064），而 PGD-AT 训练后 Saliency 归因集中度跃升至 0.157，与 Duan 等人\cite{duan2023inequality}发现的"$L_\infty$对抗性训练导致特征归因不均等（inequality）"现象一致。此时 PGD-AT 模型将决策依赖压缩到极少数像素，一旦这些像素被准确遮蔽，模型即丧失判别能力，因此 PGD-AT 对显著性遮蔽攻击的防御能力反而略低于 Standard（70.11\% vs.\ 71.19\%）。
+    - 上下文：\textbf{现象一：PGD-AT 使 Saliency 归因显著集中（2.47倍）。}标准模型上 Saliency 归因相对分散（集中度0.064），而 PGD-AT 训练后 Saliency 归因集中度跃升至 0.157，与 Duan 等人\cite{duan2023inequality}发现的"$L_\infty$对抗性训练导致特征归因不均等（inequality）"现象一致。此时 PGD-AT 模型将决策依赖压缩到极少数像素，一旦这些像素被准确遮蔽，模型即丧失判别能力，因此 PGD-AT 对原始梯度显著性图的防御能力反而略低于 Standard（70.11\% vs.\ 71.19\%）。
   - experiment.tex:564  (cite)
-    - 上下文：Duan等人\cite{duan2023inequality}指出，$L_\infty$ 对抗性训练会导致模型决策依赖发生"特征不均等"（feature inequality）现象——少数像素的归因显著放大，模型对显著像素的依赖性增强。该现象意味着遮蔽攻击与梯度类对抗性训练可能存在\textbf{相互抵消趋势}：针对遮蔽攻击，遮蔽对抗训练 (Occlusion-AT) 的鲁棒性高于标准模型，而梯度对抗训练 (PGD-AT、FGSM-AT) 反而低于（或与标准模型持平）；针对梯度类攻击，规律完全相反。本文实验中这一现象在 Saliency 归因下得到了清晰体现，但在 IG 归因下未呈现。具体数据汇总于表~\ref{tab:cancel}。
+    - 上下文：Duan等人\cite{duan2023inequality}指出，$L_\infty$ 对抗性训练会导致模型决策依赖发生"特征不均等"（feature inequality）现象——少数像素的归因显著放大，模型对显著像素的依赖性增强。该现象意味着遮蔽攻击与梯度类对抗性训练可能存在\textbf{相互抵消趋势}：针对遮蔽攻击，遮蔽对抗训练 (Occlusion-AT) 的鲁棒性高于标准模型，而梯度对抗训练 (PGD-AT、FGSM-AT) 反而低于（或与标准模型持平）；针对梯度类攻击，规律完全相反。本文实验中这一现象在 Saliency 归因下得到了清晰体现，但在 积分梯度归因 归因下未呈现。具体数据汇总于表~\ref{tab:cancel}。
   - experiment.tex:585  (cite)
-    - 上下文：\textbf{Saliency 攻击下的抵消趋势（成立）。}对 FixSal-9 攻击：AdaSal-AT 98.43\%~$\gg$~Standard 71.19\%~$\geq$~PGD-AT 70.11\%；对 AdaSal 攻击：AdaSal-AT 94.30\%~$\gg$~Standard 34.33\%~$\geq$~PGD-AT 30.12\%。两种 Saliency 遮蔽攻击下，PGD-AT 的准确率均略低于或持平 Standard，验证了"梯度对抗训练对显著性遮蔽攻击不仅无防御提升，反而略有退化"的相互抵消趋势。同时，Adaptive-Saliency-AT 在梯度攻击下显著退化（PGD: 4.78\%~$\l …
+    - 上下文：\textbf{Saliency 攻击下的抵消趋势（成立）。}对 FixSal-9 攻击：AdaSal-AT 98.43\%~$\gg$~Standard 71.19\%~$\geq$~PGD-AT 70.11\%；对 AdaSal 攻击：AdaSal-AT 94.30\%~$\gg$~Standard 34.33\%~$\geq$~PGD-AT 30.12\%。两种 Saliency 遮蔽攻击下，PGD-AT 的准确率均略低于或持平 Standard，验证了"梯度对抗训练对原始梯度显著性图不仅无防御提升，反而略有退化"的相互抵消趋势。同时，Adaptive-Saliency-AT 在梯度攻击下显著退化（PGD: 4.78\%~$\ll$~Standard 33.34\%），与 Duan 等人\cite{du …
 
 ### `eykholt2018robust` — Robust physical-world attacks on deep learning models (2018)
 
@@ -132,9 +132,9 @@
   - pipeline.tex:280  (cite)
     - 上下文：基于遮蔽攻击的对抗性训练能够有效提升模型对遮蔽类攻击的防御能力，但由于训练时仅使用遮蔽攻击样本，模型可能在抵御梯度类攻击（如 FGSM\cite{goodfellow2015fgsm}、PGD\cite{madry2018pgd}）方面出现退化。这一现象源于对抗性训练的\textbf{攻击类型特异性}：模型倾向于拟合训练时所见攻击的扰动分布，对训练时未见的攻击类型泛化能力有限。
   - experiment.tex:84  (cite)
-    - 上下文：\begin{table}[htbp] \centering \caption{攻击方法参数配置} \label{tab:attack_config} \begin{tabular}{lp{3cm}p{5.5cm}} \toprule \textbf{攻击方法} & \textbf{关键参数} & \textbf{参数说明} \\ \midrule FGSM \cite{goodfellow2015fgsm} & $\varepsilon = 0.1$ & 单步梯度符号攻击，扰动在$L_\infty$球内 \\ PGD \cite{madry2018pgd} & $\varepsilon=0.1$，$\alpha=0.025$，迭代 …
+    - 上下文：\begin{table}[htbp] \centering \caption{攻击方法参数配置} \label{tab:attack_config} \begin{tabular}{lp{3cm}p{5.5cm}} \toprule \textbf{攻击方法} & \textbf{关键参数} & \textbf{参数说明} \\ \midrule FGSM \cite{goodfellow2015fgsm} & $\varepsilon = 0.1$ & 单步梯度符号攻击，扰动在$L_\infty$球内 \\ PGD \cite{madry2018pgd} & $\varepsilon=0.1$，$\alpha=0.025$，迭代20次 & 多步投影梯度下降攻击 \\ C\&W \cite{carlini …
   - experiment.tex:118  (cite)
-    - 上下文：\begin{enumerate} \item \textbf{Standard}：标准训练，无对抗扰动，仅使用干净样本训练，作为性能基线。 \item \textbf{PGD-AT}：基于PGD对抗样本的对抗性训练\cite{madry2018pgd}，代表梯度类攻击防御的主流范式。 \item \textbf{FGSM-AT}：基于FGSM对抗样本的对抗性训练\cite{goodfellow2015fgsm}，计算开销较小的梯度防御方法。 \item \textbf{Adaptive-Saliency-AT(N=5,R=3)}：基于自适应显著性遮蔽攻击（$N=5$，$R=3$）的对抗性训练，训练时每轮对最显著区域施加自适应遮蔽。 …
+    - 上下文：\begin{enumerate} \item \textbf{Standard}：标准训练，无对抗扰动，仅使用干净样本训练，作为性能基线。 \item \textbf{PGD-AT}：基于PGD对抗样本的对抗性训练\cite{madry2018pgd}，代表梯度类攻击防御的主流范式。 \item \textbf{FGSM-AT}：基于FGSM对抗样本的对抗性训练\cite{goodfellow2015fgsm}，计算开销较小的梯度防御方法。 \item \textbf{Adaptive-Saliency-AT(N=5,R=3)}：基于自适应原始梯度显著性图（$N=5$，$R=3$）的对抗性训练，训练时每轮对最显著区域施加自适应遮蔽。 \item \textbf{Mix-AT(Adaptive-Saliency+PGD)}：混合对抗性 …
 
 ### `he2016resnet` — Deep residual learning for image recognition (2016)
 
@@ -162,7 +162,7 @@
 - Crossref：title=A Fast Learning Algorithm for Deep Belief Nets; year=2006; DOI=10.1162/neco.2006.18.7.1527; score=1.00
 - 论文中引用位置：1 处
   - introduction.tex:5  (cite)
-    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究 …
+    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究表明，包括当时最先进深度神经网络在内的多种机器学习模型均难以抵御此类攻击\c …
 
 ### `kingma2015adam` — Adam: A method for stochastic optimization (2015)
 
@@ -192,7 +192,7 @@
 - arXiv HTTP：200
 - 论文中引用位置：1 处
   - pipeline.tex:139  (cite)
-    - 上下文：具体而言，\textbf{固定 IG 遮蔽攻击}的流程为：首先使用 Captum 库\cite{kokhlikyan2020captum}的 IntegratedGradients 模块（$n_{\text{steps}}=50$）计算每个像素的 IG 归因值，随后对归因图执行与梯度显著性图相同的邻域聚合（式\eqref{eq:conv_sum}）、Top-$K$ 选取与掩码膨胀操作，最终生成遮蔽对抗样本。\textbf{自适应 IG 遮蔽攻击}则在归因计算替换为 IG 的基础上，沿用自适应显著性遮蔽攻击（算法\ref{alg:adaptive_attack}）的逐样本提前终止与二维渐进搜索机制，实现基于 IG 归因的自适应遮蔽。
+    - 上下文：具体而言，\textbf{固定 积分梯度归因 遮蔽攻击}的流程为：首先使用 Captum 库\cite{kokhlikyan2020captum}的 IntegratedGradients 模块（$n_{\text{steps}}=50$）计算每个像素的 积分梯度归因 归因值，随后对归因图执行与梯度显著性图相同的邻域聚合（式\eqref{eq:conv_sum}）、Top-$K$ 选取与掩码膨胀操作，最终生成遮蔽对抗样本。\textbf{自适应 积分梯度归因 遮蔽攻击}则在归因计算替换为 积分梯度归因 的基础上，沿用自适应原始梯度显著性图（算法\ref{alg:adaptive_attack}）的逐样本提前终止与二维渐进搜索机制，实现基于 积分梯度归因 归因的自适应遮蔽。
 
 ### `krizhevsky2012imagenet` — ImageNet classification with deep convolutional neural networks (2012)
 
@@ -246,7 +246,7 @@
 - 链接：
   - URL(启发式): http://yann.lecun.com/exdb/mnist/
 - 存在性校验：ok — URL 可访问
-- Crossref：title=NGO Database; year=2011; DOI=10.5860/choice.49-1239; score=0.49
+- Crossref：title=Cartoon Image Database; year=2010; DOI=10.5860/choice.48-1199; score=0.57
 - URL HTTP：200
 - 论文中引用位置：1 处
   - experiment.tex:32  (cite)
@@ -264,7 +264,7 @@
 - Crossref：title=Deep learning; year=2015; DOI=10.1038/nature14539; score=1.00
 - 论文中引用位置：3 处
   - introduction.tex:5  (cite)
-    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究 …
+    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究表明，包括当时最先进深度神经网络在内的多种机器学习模型均难以抵御此类攻击\c …
   - introduction.tex:9  (cite)
     - 上下文：近年来，深度学习技术在计算机视觉领域取得了举世瞩目的突破性进展\cite{lecun2015deeplearning}。以卷积神经网络为代表的深度模型在图像分类、目标检测、语义分割等核心任务上的表现已全面超越传统方法，甚至在部分基准测试中达到乃至超越人类水平\cite{krizhevsky2012imagenet,he2016resnet}。深度学习模型深刻改变着各行各业的技术格局。
   - background.tex:11  (cite)
@@ -281,7 +281,7 @@
 - URL HTTP：200
 - 论文中引用位置：13 处
   - introduction.tex:22  (cite)
-    - 上下文：面对对抗样本的挑战，学术界提出了多种防御思路，其中对抗性训练\cite{madry2018pgd}被广泛认为是目前最有效的防御范式。该方法通过在训练过程中持续引入对抗样本，迫使模型习得对扰动的鲁棒表示。
+    - 上下文：面对对抗样本的挑战，学术界提出了多种防御思路，其中对抗性训练\cite{madry2018pgd}被广泛认为是目前最有效的防御范式。该方法使用对抗性样本进行训练，使得模型增强对扰动的鲁棒性。
   - introduction.tex:31  (cite)
     - 上下文：在基于梯度的白盒攻击方面，Goodfellow等人提出的快速梯度符号法（FGSM）\cite{goodfellow2015fgsm}是最早的高效攻击算法之一，通过沿损失函数梯度方向施加一步扰动实现攻击，计算代价低但攻击成功率有限。Madry等人将攻击问题形式化为约束优化问题，提出的投影梯度下降攻击（PGD）\cite{madry2018pgd}通过多步迭代逼近最优对抗扰动，被公认为Lp范数约束下最强的一阶攻击方法，至今仍是对抗鲁棒性研究的基准参照。Croce与Hein提出的AutoAttack\cite{croce2020autoattack}将多种互补攻击策略集成为标准化评估框架，有效规避了单一攻击方法评估的局限性，已成为对抗鲁棒性基准评测的通行标准。
   - introduction.tex:39  (cite)
@@ -293,17 +293,17 @@
   - background.tex:157  (cite)
     - 上下文：Madry等人从鞍点优化角度对该框架进行了理论分析，并证明使用PGD攻击近似求解内层最大化问题，能够有效提升模型的 $L_\infty$ 鲁棒性\cite{madry2018pgd}。
   - pipeline.tex:19  (cite)
-    - 上下文：然而，标准训练得到的模型在面对对抗样本时极为脆弱。基于 $L_p$ 范数的对抗性训练将训练目标改写为鞍点问题： \begin{equation} \min_{\theta} \; \mathbb{E}_{(x,y)\sim\mathcal{D}} \left[ \max_{\|\delta\|_p \leq \varepsilon} \mathcal{L}\!\left(f_{\theta}(x+\delta),\, y\right) \right] \end{equation} 该框架要求模型对所有满足 $\|\delta\|_p \leq \varepsilon$ 约束的扰动保持正确预测。以 Madry 等人提出的 PGD 对抗 …
+    - 上下文：然而，标准训练得到的模型在面对对抗样本时极为脆弱。基于 $L_p$ 范数的对抗性训练将训练目标改写为鞍点问题： \begin{equation} \min_{\theta} \; \mathbb{E}_{(x,y)\sim\mathcal{D}} \left[ \max_{\|\delta\|_p \leq \varepsilon} \mathcal{L}\!\left(f_{\theta}(x+\delta),\, y\right) \right] \end{equation} 该框架要求模型对所有满足 $\|\delta\|_p \leq \varepsilon$ 约束的扰动保持正确预测。以 Madry 等人提出的 PGD 对抗性训练\cite{madry2018pgd}为代表，$L_p$ 范数方法在抵 …
   - pipeline.tex:37  (cite)
-    - 上下文：\begin{enumerate} \item \textbf{关键区域定位}：利用梯度显著性图 $S(x,y) = \left|\partial f_y(x)/\partial x\right|$，以单次反向传播定位模型决策的关键像素区域，生成二值掩码 $M$。 \item \textbf{遮蔽攻击生成}：在关键区域定位的基础上，分别设计固定显著性遮蔽攻击与自适应显著性遮蔽攻击，前者适用于批量高效攻击，后者以最小代价实现逐样本自适应攻击。 \item \textbf{对抗性训练}：将遮蔽攻击生成的对抗样本引入训练循环，并进一步提出混合对抗性训练策略，将遮蔽攻击与 PGD 攻击\cite{madry2018pgd}相结合，提升模型对多类型攻击的泛化防御能力。 \end{enumerate}
+    - 上下文：\begin{enumerate} \item \textbf{关键区域定位}：利用梯度显著性图 $S(x,y) = \left|\partial f_y(x)/\partial x\right|$，以单次反向传播定位模型决策的关键像素区域，生成二值掩码 $M$。 \item \textbf{遮蔽攻击生成}：在关键区域定位的基础上，分别设计固定原始梯度显著性图与自适应原始梯度显著性图，前者适用于批量高效攻击，后者以最小代价实现逐样本自适应攻击。 \item \textbf{对抗性训练}：将遮蔽攻击生成的对抗样本引入训练循环，并进一步提出混合对抗性训练策略，将遮蔽攻击与 PGD 攻击\cite{madry2018pgd}相结合，提升模型对多类型攻击的泛化防御能力。 \end{enumerate}
   - pipeline.tex:280  (cite)
     - 上下文：基于遮蔽攻击的对抗性训练能够有效提升模型对遮蔽类攻击的防御能力，但由于训练时仅使用遮蔽攻击样本，模型可能在抵御梯度类攻击（如 FGSM\cite{goodfellow2015fgsm}、PGD\cite{madry2018pgd}）方面出现退化。这一现象源于对抗性训练的\textbf{攻击类型特异性}：模型倾向于拟合训练时所见攻击的扰动分布，对训练时未见的攻击类型泛化能力有限。
   - experiment.tex:87  (cite)
-    - 上下文：\begin{table}[htbp] \centering \caption{攻击方法参数配置} \label{tab:attack_config} \begin{tabular}{lp{3cm}p{5.5cm}} \toprule \textbf{攻击方法} & \textbf{关键参数} & \textbf{参数说明} \\ \midrule FGSM \cite{goodfellow2015fgsm} & $\varepsilon = 0.1$ & 单步梯度符号攻击，扰动在$L_\infty$球内 \\ PGD \cite{madry2018pgd} & $\varepsilon=0.1$，$\alpha=0.025$，迭代 …
+    - 上下文：\begin{table}[htbp] \centering \caption{攻击方法参数配置} \label{tab:attack_config} \begin{tabular}{lp{3cm}p{5.5cm}} \toprule \textbf{攻击方法} & \textbf{关键参数} & \textbf{参数说明} \\ \midrule FGSM \cite{goodfellow2015fgsm} & $\varepsilon = 0.1$ & 单步梯度符号攻击，扰动在$L_\infty$球内 \\ PGD \cite{madry2018pgd} & $\varepsilon=0.1$，$\alpha=0.025$，迭代20次 & 多步投影梯度下降攻击 \\ C\&W \cite{carlini …
   - experiment.tex:117  (cite)
-    - 上下文：\begin{enumerate} \item \textbf{Standard}：标准训练，无对抗扰动，仅使用干净样本训练，作为性能基线。 \item \textbf{PGD-AT}：基于PGD对抗样本的对抗性训练\cite{madry2018pgd}，代表梯度类攻击防御的主流范式。 \item \textbf{FGSM-AT}：基于FGSM对抗样本的对抗性训练\cite{goodfellow2015fgsm}，计算开销较小的梯度防御方法。 \item \textbf{Adaptive-Saliency-AT(N=5,R=3)}：基于自适应显著性遮蔽攻击（$N=5$，$R=3$）的对抗性训练，训练时每轮对最显著区域施加自适应遮蔽。 …
+    - 上下文：\begin{enumerate} \item \textbf{Standard}：标准训练，无对抗扰动，仅使用干净样本训练，作为性能基线。 \item \textbf{PGD-AT}：基于PGD对抗样本的对抗性训练\cite{madry2018pgd}，代表梯度类攻击防御的主流范式。 \item \textbf{FGSM-AT}：基于FGSM对抗样本的对抗性训练\cite{goodfellow2015fgsm}，计算开销较小的梯度防御方法。 \item \textbf{Adaptive-Saliency-AT(N=5,R=3)}：基于自适应原始梯度显著性图（$N=5$，$R=3$）的对抗性训练，训练时每轮对最显著区域施加自适应遮蔽。 \item \textbf{Mix-AT(Adaptive-Saliency+PGD)}：混合对抗性 …
   - experiment.tex:519  (cite)
-    - 上下文：这一差异的根源在于梯度掩蔽（gradient masking）\cite{madry2018pgd}对两种归因方法的影响不同。PGD对抗性训练使模型的损失曲面在$L_\infty$方向上趋于平坦，产生梯度掩蔽效应。梯度显著性图仅使用当前输入点的单点梯度，对梯度掩蔽具有一定的鲁棒性，仍能粗略定位关键区域，因此显著性遮蔽攻击在PGD-AT模型上保持了较高的攻击效力。相比之下，梯度积分（IG）需要沿从基线到输入的完整路径积累梯度信号（$n_{\text{steps}}=50$步），梯度掩蔽效应导致路径上大量梯度信号失真，使IG归因图\textbf{系统性地偏离}真正的关键像素，遮蔽了非关键区域，攻击效力因此大幅下降。
+    - 上下文：这一差异的根源在于梯度掩蔽（gradient masking）\cite{madry2018pgd}对两种归因方法的影响不同。PGD对抗性训练使模型的损失曲面在$L_\infty$方向上趋于平坦，产生梯度掩蔽效应。梯度显著性图仅使用当前输入点的单点梯度，对梯度掩蔽具有一定的鲁棒性，仍能粗略定位关键区域，因此原始梯度显著性图在PGD-AT模型上保持了较高的攻击效力。相比之下，梯度积分（积分梯度归因）需要沿从基线到输入的完整路径积累梯度信号（$n_{\text{steps}}=50$步），梯度掩蔽效应导致路径上大量梯度信号失真，使积分梯度归因归因图\textbf{系统性地偏离}真正的关键像素，遮蔽了非关键区域，攻击效力因此大幅下降。
   - experiment.tex:702  (cite)
     - 上下文：\textbf{遮蔽攻击的威胁实质。}本文提出的显著性图引导遮蔽攻击，在标准模型上达到与PGD~\cite{madry2018pgd}和C\&W~\cite{carlini2017cw}攻击相近的攻击强度，表明遮蔽攻击是一种不可忽视的独立威胁类型。与$L_p$范数攻击相比，遮蔽攻击无需满足全局扰动约束，具有更强的视觉可解释性：每个遮蔽区域对应模型实际依赖的判别性视觉特征，攻击的语义意义明确。在真实世界中，物理遮挡、光照阴影、局部污损等现象均与遮蔽攻击在形式上高度吻合，使其具备更强的现实威胁意义。
 
@@ -346,7 +346,7 @@
 - Crossref：title=Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization; year=2017; DOI=10.1109/iccv.2017.74; score=1.00
 - 论文中引用位置：1 处
   - introduction.tex:49  (cite)
-    - 上下文：梯度显著性图（Gradient Saliency Map）由Simonyan等人率先提出\cite{simonyan2014saliency}，其核心思想是将网络输出对输入的梯度绝对值作为各像素重要性的度量。该方法计算简洁，仅需一次反向传播即可获得全图的重要性评分，是计算效率最高的特征归因方法之一。Sundararajan等人提出的梯度积分（Integrated Gradients, IG）\cite{sundararajan2017ig}在梯度显著性图的基础上引入了公理化约束，通过沿基线到输入的路径对梯度进行积分，满足灵敏性与实现不变性等理论性质，归因精度显著优于简单梯度方法，但代价是需要多次（通常为20至300次）前向与反向传播 …
+    - 上下文：梯度显著性图（Gradient Saliency Map）由Simonyan等人率先提出\cite{simonyan2014saliency}，其核心思想是将网络输出对输入的梯度绝对值作为各像素重要性的度量。该方法计算简洁，仅需一次反向传播即可获得全图的重要性评分，是计算效率最高的特征归因方法之一。Sundararajan等人提出的梯度积分（Integrated Gradients, 积分梯度归因）\cite{sundararajan2017ig}在梯度显著性图的基础上引入了公理化约束，通过沿基线到输入的路径对梯度进行积分，满足灵敏性与实现不变性等理论性质，归因精度显著优于原始梯度方法，但代价是需要多次（通常为20至300次）前向与反向传播，计算开销远高于梯度显著性图。Selvaraju等人提出的梯度加权类激活映射 …
 
 ### `shafahi2019free` — Adversarial training for free! (2019)
 
@@ -374,11 +374,11 @@
 - arXiv HTTP：200
 - 论文中引用位置：3 处
   - introduction.tex:49  (cite)
-    - 上下文：梯度显著性图（Gradient Saliency Map）由Simonyan等人率先提出\cite{simonyan2014saliency}，其核心思想是将网络输出对输入的梯度绝对值作为各像素重要性的度量。该方法计算简洁，仅需一次反向传播即可获得全图的重要性评分，是计算效率最高的特征归因方法之一。Sundararajan等人提出的梯度积分（Integrated Gradients, IG）\cite{sundararajan2017ig}在梯度显著性图的基础上引入了公理化约束，通过沿基线到输入的路径对梯度进行积分，满足灵敏性与实现不变性等理论性质，归因精度显著优于简单梯度方法，但代价是需要多次（通常为20至300次）前向与反向传播 …
+    - 上下文：梯度显著性图（Gradient Saliency Map）由Simonyan等人率先提出\cite{simonyan2014saliency}，其核心思想是将网络输出对输入的梯度绝对值作为各像素重要性的度量。该方法计算简洁，仅需一次反向传播即可获得全图的重要性评分，是计算效率最高的特征归因方法之一。Sundararajan等人提出的梯度积分（Integrated Gradients, 积分梯度归因）\cite{sundararajan2017ig}在梯度显著性图的基础上引入了公理化约束，通过沿基线到输入的路径对梯度进行积分，满足灵敏性与实现不变性等理论性质，归因精度显著优于原始梯度方法，但代价是需要多次（通常为20至300次）前向与反向传播，计算开销远高于梯度显著性图。Selvaraju等人提出的梯度加权类激活映射 …
   - background.tex:183  (cite)
     - 上下文：梯度显著性图（Gradient-based Saliency Map）由Simonyan等人提出\cite{simonyan2014saliency}，是最基础也最直观的特征归因方法。其核心思想是：模型预测对某一输入像素的梯度绝对值越大，说明该像素对预测结果的影响越大，即该像素越"显著"。
   - pipeline.tex:47  (cite)
-    - 上下文：梯度显著性图由 Simonyan 等人\cite{simonyan2014saliency}提出，其核心思想是利用模型对输入的一阶梯度信息衡量每个像素对预测结果的重要程度。给定分类模型 $f_{\theta}$、输入图像 $x \in \mathbb{R}^{C \times H \times W}$ 及真实类别 $y$，梯度显著性图定义为： \begin{equation} S(x, y) = \left| \frac{\partial f_y(x)}{\partial x} \right| \label{eq:saliency} \end{equation} 其中 $f_y(x)$ 表示模型对类别 $y$ 的输出得分（logit …
+    - 上下文：梯度显著性图由 Simonyan 等人\cite{simonyan2014saliency}提出，其核心思想是利用模型对输入的一阶梯度信息衡量每个像素对预测结果的重要程度。给定分类模型 $f_{\theta}$、输入图像 $x \in \mathbb{R}^{C \times H \times W}$ 及真实类别 $y$，梯度显著性图定义为： \begin{equation} S(x, y) = \left| \frac{\partial f_y(x)}{\partial x} \right| \label{eq:saliency} \end{equation} 其中 $f_y(x)$ 表示模型对类别 $y$ 的输出得分（logit），$|\cdot|$ 表示逐元素取绝对值。显著性值越高的像素，其微小变化对 …
 
 ### `sundararajan2017ig` — Axiomatic attribution for deep networks (2017)
 
@@ -391,11 +391,11 @@
 - arXiv HTTP：200
 - 论文中引用位置：3 处
   - introduction.tex:49  (cite)
-    - 上下文：梯度显著性图（Gradient Saliency Map）由Simonyan等人率先提出\cite{simonyan2014saliency}，其核心思想是将网络输出对输入的梯度绝对值作为各像素重要性的度量。该方法计算简洁，仅需一次反向传播即可获得全图的重要性评分，是计算效率最高的特征归因方法之一。Sundararajan等人提出的梯度积分（Integrated Gradients, IG）\cite{sundararajan2017ig}在梯度显著性图的基础上引入了公理化约束，通过沿基线到输入的路径对梯度进行积分，满足灵敏性与实现不变性等理论性质，归因精度显著优于简单梯度方法，但代价是需要多次（通常为20至300次）前向与反向传播 …
+    - 上下文：梯度显著性图（Gradient Saliency Map）由Simonyan等人率先提出\cite{simonyan2014saliency}，其核心思想是将网络输出对输入的梯度绝对值作为各像素重要性的度量。该方法计算简洁，仅需一次反向传播即可获得全图的重要性评分，是计算效率最高的特征归因方法之一。Sundararajan等人提出的梯度积分（Integrated Gradients, 积分梯度归因）\cite{sundararajan2017ig}在梯度显著性图的基础上引入了公理化约束，通过沿基线到输入的路径对梯度进行积分，满足灵敏性与实现不变性等理论性质，归因精度显著优于原始梯度方法，但代价是需要多次（通常为20至300次）前向与反向传播，计算开销远高于梯度显著性图。Selvaraju等人提出的梯度加权类激活映射 …
   - background.tex:197  (cite)
-    - 上下文：梯度积分（Integrated Gradients，IG）由Sundararajan等人提出\cite{sundararajan2017ig}，是一种在理论上更为严格的特征归因方法。IG的核心思想是沿从基线输入 $\mathbf{x}^{(0)}$（通常为全零图像）到目标输入 $\mathbf{x}$ 的路径上对梯度进行积分，从而计算每个特征对预测变化的累积贡献：
+    - 上下文：梯度积分（Integrated Gradients，积分梯度归因）由Sundararajan等人提出\cite{sundararajan2017ig}，是一种在理论上更为严格的特征归因方法。积分梯度归因的核心思想是沿从基线输入 $\mathbf{x}^{(0)}$（通常为全零图像）到目标输入 $\mathbf{x}$ 的路径上对梯度进行积分，从而计算每个特征对预测变化的累积贡献：
   - pipeline.tex:106  (cite)
-    - 上下文：梯度积分（Integrated Gradients，IG）\cite{sundararajan2017ig}是一种理论性质更完备的特征归因方法，其通过从基准图像 $x_0$（通常为全黑图像）到输入 $x$ 的路径积分计算归因值： \begin{equation} \text{IG}_i(x, y) = (x_i - x_{0,i}) \cdot \int_0^1 \frac{\partial f_y(x_0 + \alpha(x - x_0))}{\partial x_i} \,\mathrm{d}\alpha \end{equation} 在实践中，积分通过 Riemann 近似以 $n_{\text{steps}}=50$ 步离散化，需要 50 次前向与反向传播，且依赖 Captum 等外部归因库。
+    - 上下文：梯度积分（Integrated Gradients，积分梯度归因）\cite{sundararajan2017ig}是一种理论性质更完备的特征归因方法，其通过从基准图像 $x_0$（通常为全黑图像）到输入 $x$ 的路径积分计算归因值： \begin{equation} \text{积分梯度归因}_i(x, y) = (x_i - x_{0,i}) \cdot \int_0^1 \frac{\partial f_y(x_0 + \alpha(x - x_0))}{\partial x_i} \,\mathrm{d}\alpha \end{equation} 在实践中，积分通过 Riemann 近似以 $n_{\text{steps}}=50$ 步离散化，需要 50 次前向与反向传播，且依赖 Captum 等外部归因库。
 
 ### `szegedy2014intriguing` — Intriguing properties of neural networks (2014)
 
@@ -408,9 +408,9 @@
 - URL HTTP：200
 - 论文中引用位置：4 处
   - introduction.tex:5  (cite)
-    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究 …
+    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究表明，包括当时最先进深度神经网络在内的多种机器学习模型均难以抵御此类攻击\c …
   - introduction.tex:5  (cite)
-    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究 …
+    - 上下文：人工智能的研究历史可追溯至二十世纪中叶，该领域经历了多次高潮与低谷。在2006年，Hinton等人提出的深度学习方法\cite{hinton2006deep}引发了新一轮研究热潮。深度学习之所以能够推动人工智能技术实现质的飞跃，关键在于其在视觉感知、语言理解等复杂任务上展现出的卓越能力，部分场景下甚至超越了人类表现\cite{lecun2015deeplearning}。然而，这一看似强大的技术体系却存在一个致命弱点：对对抗性样本的高度敏感。对抗性样本通过在原始数据上叠加精心设计的细微扰动，可使深度神经网络产生置信度极高但完全错误的判断\cite{szegedy2014intriguing}。Szegedy等人于2014年的实证研究表明，包括当时最先进深度神经网络在内的多种机器学习模型均难以抵御此类攻击\c …
   - introduction.tex:11  (cite)
     - 上下文：然而，2014年Szegedy等人的开创性研究首次揭示了深度神经网络中普遍存在的对抗样本现象\cite{szegedy2014intriguing}：通过在原始输入图像上叠加人眼几乎无法察觉的微小扰动，便可以使分类能力极强的深度模型以极高置信度输出完全错误的预测结果。如图\ref{fig:adversarial_example}所示，原始图像经过细微扰动处理后得到对抗样本。对于人眼观察者而言，两幅图像视觉上完全一致，均呈现"熊猫"的形象。然而深度神经网络的判断却截然不同：模型对原始输入能够正确分类，却对对抗样本给出了99.3\%置信度的"长臂猿"这一错误预测。
   - background.tex:81  (cite)

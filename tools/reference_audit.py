@@ -52,6 +52,7 @@ class CiteOccurrence:
     line_no: int  # 1-based
     command: str
     keys: List[str]
+    line_text: str
     context: str
 
 
@@ -87,7 +88,7 @@ class VerificationResult:
     error: Optional[str] = None
 
 
-ARXIV_ID_RE = re.compile(r"(?:arXiv\s*:\s*|arXiv\s+preprint\s+arXiv\s*:\s*)(?P<id>\d{4}\.\d{4,5})(?:v\d+)?", re.IGNORECASE)
+ARXIV_ID_RE = re.compile(r"(?:arXiv\s*:\s*|arXiv\s+preprint\s+arXiv\s*:\s*)(?P<id>\d{4}\.\d{4,5})(?:v\d+)?", re.积分梯度归因NORECASE)
 ARXIV_ID_SIMPLE_RE = re.compile(r"\b(?P<id>\d{4}\.\d{4,5})(?:v\d+)?\b")
 
 CITE_CMD_RE = re.compile(
@@ -385,8 +386,8 @@ def find_citations_in_tex(tex_path: Path) -> List[CiteOccurrence]:
 
             para_lines = [strip_tex_comment(l).strip() for l in lines[start : end + 1]]
             context = normalize_whitespace(" ".join([l for l in para_lines if l]))
-            if len(context) > 360:
-                context = context[:320].rstrip() + " …"
+
+            line_text = normalize_whitespace(line.strip())
 
             occurrences.append(
                 CiteOccurrence(
@@ -394,6 +395,7 @@ def find_citations_in_tex(tex_path: Path) -> List[CiteOccurrence]:
                     line_no=line_no,
                     command=cmd,
                     keys=keys,
+                    line_text=line_text,
                     context=context,
                 )
             )
@@ -419,7 +421,7 @@ def extract_arxiv_id(entry: BibEntry) -> Optional[str]:
         m = ARXIV_ID_RE.search(val)
         if m:
             return m.group("id")
-        m2 = re.search(r"arXiv\s*:\s*(\d{4}\.\d{4,5})", val, re.IGNORECASE)
+        m2 = re.search(r"arXiv\s*:\s*(\d{4}\.\d{4,5})", val, re.积分梯度归因NORECASE)
         if m2:
             return m2.group(1)
     return None
@@ -875,7 +877,7 @@ def resolve_neurips_proceedings_url(entry: BibEntry) -> Tuple[Optional[str], Opt
     best_score = -1.0
 
     # Keep parsing simple and dependency-free.
-    anchor_re = re.compile(r"<a[^>]*href=(?:\"|')(?P<href>[^\"']+)(?:\"|')[^>]*>(?P<text>[^<]+)</a>", re.IGNORECASE)
+    anchor_re = re.compile(r"<a[^>]*href=(?:\"|')(?P<href>[^\"']+)(?:\"|')[^>]*>(?P<text>[^<]+)</a>", re.积分梯度归因NORECASE)
     for m in anchor_re.finditer(page_html):
         href = (m.group("href") or "").strip()
         text = html.unescape((m.group("text") or "").strip())
@@ -1072,6 +1074,534 @@ def md_escape(text: str) -> str:
     return text.replace("\n", " ")
 
 
+def truncate_text(text: str, *, max_len: int) -> str:
+    if len(text) <= max_len:
+        return text
+    if max_len <= 1:
+        return "…"
+    # keep a little more headroom to avoid breaking words too often
+    cut = max(0, max_len - 2)
+    return text[:cut].rstrip() + " …"
+
+
+def strip_html_tags(text: str) -> str:
+    # best-effort HTML to plain text without third-party deps
+    if not text:
+        return ""
+    s = re.sub(r"<script\b[^>]*>.*?</script>", " ", text, flags=re.积分梯度归因NORECASE | re.DOTALL)
+    s = re.sub(r"<style\b[^>]*>.*?</style>", " ", s, flags=re.积分梯度归因NORECASE | re.DOTALL)
+    s = re.sub(r"<[^>]+>", " ", s)
+    s = html.unescape(s)
+    return normalize_whitespace(s)
+
+
+def normalize_for_tokens(text: str) -> str:
+    if not text:
+        return ""
+    # Keep LaTeX command names as tokens (e.g., \infty -> infty)
+    s = text.replace("\\&", " and ")
+    s = s.replace("$", " ")
+    s = s.replace("{", " ").replace("}", " ")
+    s = re.sub(r"\\([A-Za-z]+)", r" \1 ", s)
+    s = re.sub(r"[^A-Za-z0-9]+", " ", s)
+    return normalize_whitespace(s.lower())
+
+
+SUPPORT_STOPWORDS = {
+    # English
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "of",
+    "in",
+    "on",
+    "for",
+    "with",
+    "to",
+    "via",
+    "from",
+    "under",
+    "into",
+    "at",
+    "by",
+    "as",
+    "is",
+    "are",
+    "be",
+    "its",
+    "their",
+    "our",
+    "your",
+    "we",
+    "us",
+    "they",
+    "this",
+    "that",
+    "these",
+    "those",
+    "et",
+    "al",
+    # common LaTeX-ish / thesis noise
+    "cite",
+    "nocite",
+    "upcite",
+    "eqref",
+    "ref",
+    "label",
+    "begin",
+    "end",
+    "textbf",
+    "textit",
+    "mathrm",
+    "mathbf",
+    "mathcal",
+    "mathbb",
+    "left",
+    "right",
+}
+
+
+def tokenize_support(text: str) -> List[str]:
+    norm = normalize_for_tokens(text)
+    if not norm:
+        return []
+    toks = []
+    for w in norm.split():
+        if len(w) < 3:
+            continue
+        if w in SUPPORT_STOPWORDS:
+            continue
+        toks.append(w)
+    return toks
+
+
+def jaccard(set_a: set[str], set_b: set[str]) -> float:
+    if not set_a or not set_b:
+        return 0.0
+    inter = len(set_a & set_b)
+    union = len(set_a | set_b)
+    return float(inter) / float(union) if union else 0.0
+
+
+@dataclass
+class Evidence:
+    source: str
+    url: Optional[str]
+    title: Optional[str]
+    abstract: Optional[str]
+    http_status: Optional[int] = None
+    error: Optional[str] = None
+
+
+def fetch_arxiv_evidence(arxiv_id: str) -> Evidence:
+    params = {
+        "id_list": arxiv_id,
+        "max_results": "1",
+    }
+    api_url = "https://export.arxiv.org/api/query?" + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+    st, data, err = http_get(api_url, headers={"Accept": "application/atom+xml"}, max_bytes=2_000_000)
+    if st != 200 or not data:
+        return Evidence(
+            source="arXiv",
+            url=f"https://arxiv.org/abs/{arxiv_id}",
+            title=None,
+            abstract=None,
+            http_status=st,
+            error=err or f"arXiv http status {st}",
+        )
+
+    try:
+        root = ET.fromstring(data)
+    except Exception as e:
+        return Evidence(
+            source="arXiv",
+            url=f"https://arxiv.org/abs/{arxiv_id}",
+            title=None,
+            abstract=None,
+            http_status=st,
+            error=f"arXiv xml parse failed: {type(e).__name__}: {e}",
+        )
+
+    ns = {"atom": "http://www.w3.org/2005/Atom"}
+    ent = root.find("atom:entry", ns)
+    if ent is None:
+        return Evidence(
+            source="arXiv",
+            url=f"https://arxiv.org/abs/{arxiv_id}",
+            title=None,
+            abstract=None,
+            http_status=st,
+            error="arXiv: no entry",
+        )
+
+    title = normalize_whitespace((ent.findtext("atom:title", default="", namespaces=ns) or "").strip()) or None
+    abstract = normalize_whitespace((ent.findtext("atom:summary", default="", namespaces=ns) or "").strip()) or None
+    return Evidence(
+        source="arXiv",
+        url=f"https://arxiv.org/abs/{arxiv_id}",
+        title=title,
+        abstract=abstract,
+        http_status=st,
+        error=None,
+    )
+
+
+def unwrap_openreview_field(val: object) -> Optional[str]:
+    if val is None:
+        return None
+    if isinstance(val, str):
+        return val.strip() or None
+    if isinstance(val, list):
+        items = [str(x).strip() for x in val if str(x).strip()]
+        return normalize_whitespace(" ".join(items)) or None
+    if isinstance(val, dict):
+        # OpenReview sometimes returns {"value": "..."}
+        if "value" in val and isinstance(val["value"], str):
+            return val["value"].strip() or None
+        if "values" in val and isinstance(val["values"], list):
+            items = [str(x).strip() for x in val["values"] if str(x).strip()]
+            return normalize_whitespace(" ".join(items)) or None
+    return None
+
+
+def fetch_openreview_evidence(forum_id: str) -> Evidence:
+    params = {
+        "forum": forum_id,
+        "limit": "1",
+    }
+    api_url = "https://api.openreview.net/notes?" + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+    st, data, err = http_get_json(api_url)
+    if st != 200 or not data:
+        return Evidence(
+            source="OpenReview",
+            url=f"https://openreview.net/forum?id={forum_id}",
+            title=None,
+            abstract=None,
+            http_status=st,
+            error=err or f"openreview http status {st}",
+        )
+
+    notes = data.get("notes") or []
+    if not notes:
+        return Evidence(
+            source="OpenReview",
+            url=f"https://openreview.net/forum?id={forum_id}",
+            title=None,
+            abstract=None,
+            http_status=st,
+            error="openreview: no notes",
+        )
+
+    content = (notes[0].get("content") or {})
+    title = unwrap_openreview_field(content.get("title"))
+    abstract = unwrap_openreview_field(content.get("abstract"))
+    return Evidence(
+        source="OpenReview",
+        url=f"https://openreview.net/forum?id={forum_id}",
+        title=title,
+        abstract=abstract,
+        http_status=st,
+        error=None,
+    )
+
+
+def fetch_neurips_evidence(proceedings_url: str) -> Evidence:
+    st, data, err = http_get(proceedings_url, headers={"Accept": "text/html"}, max_bytes=2_000_000)
+    if st != 200 or not data:
+        return Evidence(
+            source="NeurIPS Proceedings",
+            url=proceedings_url,
+            title=None,
+            abstract=None,
+            http_status=st,
+            error=err or f"neurips http status {st}",
+        )
+
+    page = data.decode("utf-8", errors="replace")
+
+    # Title
+    title = None
+    mt = re.search(r"<title>(?P<t>.*?)</title>", page, flags=re.积分梯度归因NORECASE | re.DOTALL)
+    if mt:
+        title = strip_html_tags(mt.group("t"))
+
+    abstract = None
+    # Common pattern: <h4>Abstract</h4><p>...</p>
+    m1 = re.search(
+        r"<h4[^>]*>\s*Abstract\s*</h4>\s*<p[^>]*>(?P<a>.*?)</p>",
+        page,
+        flags=re.积分梯度归因NORECASE | re.DOTALL,
+    )
+    if m1:
+        abstract = strip_html_tags(m1.group("a"))
+    if not abstract:
+        # Fallback: meta description
+        m2 = re.search(
+            r"<meta[^>]+name=(?:\"|')description(?:\"|')[^>]+content=(?:\"|')(?P<a>.*?)(?:\"|')",
+            page,
+            flags=re.积分梯度归因NORECASE | re.DOTALL,
+        )
+        if m2:
+            abstract = strip_html_tags(m2.group("a"))
+
+    abstract = normalize_whitespace(abstract) if abstract else None
+    title = normalize_whitespace(title) if title else None
+
+    return Evidence(
+        source="NeurIPS Proceedings",
+        url=proceedings_url,
+        title=title,
+        abstract=abstract,
+        http_status=st,
+        error=None,
+    )
+
+
+def fetch_crossref_evidence(doi: str) -> Evidence:
+    api_url = "https://api.crossref.org/works/" + urllib.parse.quote(doi)
+    st, data, err = http_get_json(api_url)
+    if st != 200 or not data or (data.get("status") != "ok"):
+        return Evidence(
+            source="Crossref",
+            url=f"https://doi.org/{doi}",
+            title=None,
+            abstract=None,
+            http_status=st,
+            error=err or f"crossref http status {st}",
+        )
+
+    msg = data.get("message") or {}
+    titles = msg.get("title") or []
+    title = titles[0] if titles else None
+    abstract = msg.get("abstract")
+    if isinstance(abstract, str):
+        abstract = strip_html_tags(abstract)
+    else:
+        abstract = None
+
+    return Evidence(
+        source="Crossref",
+        url=f"https://doi.org/{doi}",
+        title=normalize_whitespace(title) if title else None,
+        abstract=normalize_whitespace(abstract) if abstract else None,
+        http_status=st,
+        error=None,
+    )
+
+
+def forum_id_from_openreview_url(url: str) -> Optional[str]:
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        return None
+    qs = urllib.parse.parse_qs(parsed.query or "")
+    fid = (qs.get("id") or qs.get("forum") or [None])[0]
+    return fid.strip() if isinstance(fid, str) and fid.strip() else None
+
+
+def fetch_best_evidence(entry: BibEntry, vr: VerificationResult, *, polite_delay_s: float) -> Evidence:
+    # Priority: arXiv > OpenReview > NeurIPS proceedings > Crossref (DOI)
+    if vr.arxiv_id:
+        time.sleep(polite_delay_s)
+        return fetch_arxiv_evidence(vr.arxiv_id)
+
+    if vr.url and vr.url_source == "openreview":
+        forum_id = forum_id_from_openreview_url(vr.url)
+        if forum_id:
+            time.sleep(polite_delay_s)
+            return fetch_openreview_evidence(forum_id)
+
+    if vr.url and vr.url_source == "neurips":
+        time.sleep(polite_delay_s)
+        return fetch_neurips_evidence(vr.url)
+
+    if vr.doi:
+        time.sleep(polite_delay_s)
+        return fetch_crossref_evidence(vr.doi)
+
+    # Fallback: URL exists but abstract unknown
+    if vr.url:
+        return Evidence(source="URL", url=vr.url, title=entry.fields.get("title"), abstract=None)
+    return Evidence(source="(none)", url=None, title=entry.fields.get("title"), abstract=None)
+
+
+def classify_support(
+    *,
+    context: str,
+    ref_title: str,
+    evidence_abstract: Optional[str],
+) -> Tuple[str, str, List[str], float, float]:
+    """Return (level, reason, common_tokens, jaccard_title, jaccard_abs).
+
+    Level is a conservative heuristic: 高/中/低/不确定.
+    """
+    ctx_tokens = set(tokenize_support(context))
+    title_tokens = set(tokenize_support(ref_title))
+    abs_tokens = set(tokenize_support(evidence_abstract or ""))
+
+    common_title = ctx_tokens & title_tokens
+    common_abs = ctx_tokens & abs_tokens
+
+    jt = jaccard(ctx_tokens, title_tokens)
+    ja = jaccard(ctx_tokens, abs_tokens) if abs_tokens else 0.0
+
+    # If the thesis context contains too few Latin tokens, automated matching is unreliable.
+    if len(ctx_tokens) < 8:
+        common = sorted(common_title or common_abs)
+        return "不确定", "上下文英文关键词较少，自动比对不稳定", common[:12], jt, ja
+
+    if not abs_tokens:
+        if len(common_title) >= 3 or jt >= 0.10:
+            common = sorted(common_title)
+            return "中", "仅能对齐标题/关键词（未获取摘要），建议人工核对", common[:12], jt, ja
+        common = sorted(common_title)
+        return "不确定", "未获取摘要且标题重合较少，建议重点核对", common[:12], jt, ja
+
+    # With abstract
+    if len(common_abs) >= 6 or ja >= 0.08:
+        common = sorted(common_abs)
+        return "高", "上下文与摘要关键词重合较多（主题一致性较高）", common[:12], jt, ja
+    if len(common_abs) >= 3 or len(common_title) >= 3 or jt >= 0.10:
+        common = sorted(common_abs if common_abs else common_title)
+        return "中", "主题可能相关，但摘要关键词重合一般；建议人工核对具体结论", common[:12], jt, ja
+    common = sorted(common_abs if common_abs else common_title)
+    return "低", "摘要关键词重合很少（可能不对应此处论述），建议重点核对", common[:12], jt, ja
+
+
+def write_support_report(
+    *,
+    root: Path,
+    out_path: Path,
+    bib_path: Path,
+    tex_files: List[Path],
+    entries: Dict[str, BibEntry],
+    verifications: Dict[str, VerificationResult],
+    key_to_occ: Dict[str, List[CiteOccurrence]],
+    network: bool,
+    polite_delay_s: float,
+) -> None:
+    rel = lambda p: p.relative_to(root).as_posix()
+
+    # Fetch evidence once per key
+    evidence_by_key: Dict[str, Evidence] = {}
+    for key, entry in entries.items():
+        vr = verifications.get(key)
+        if not vr or (not network):
+            evidence_by_key[key] = Evidence(source="(no-network)", url=None, title=entry.fields.get("title"), abstract=None)
+            continue
+        evidence_by_key[key] = fetch_best_evidence(entry, vr, polite_delay_s=polite_delay_s)
+
+    # Build stats
+    total_occ = sum(len(v) for v in key_to_occ.values())
+    abstract_ok = sum(1 for ev in evidence_by_key.values() if ev.abstract)
+    abstract_missing = len(entries) - abstract_ok
+
+    flagged_low = 0
+    flagged_uncertain = 0
+    for key, occs in key_to_occ.items():
+        entry = entries.get(key)
+        if not entry:
+            continue
+        ev = evidence_by_key.get(key)
+        if not ev:
+            continue
+        for o in occs:
+            lvl, _reason, _common, _jt, _ja = classify_support(
+                context=o.context,
+                ref_title=(entry.fields.get("title") or ""),
+                evidence_abstract=ev.abstract,
+            )
+            if lvl == "低":
+                flagged_low += 1
+            elif lvl == "不确定":
+                flagged_uncertain += 1
+
+    lines: List[str] = []
+    lines.append("# 引用支撑性（摘要级）核查报告")
+    lines.append("")
+    lines.append(f"- 生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append(f"- Bib 文件：{rel(bib_path)}")
+    lines.append(f"- 扫描 TeX 文件数：{len(tex_files)}")
+    lines.append(f"- 联网校验：{'否（--no-network）' if not network else '是'}")
+    lines.append("")
+    lines.append("## 重要说明")
+    lines.append("")
+    lines.append("- 本报告只做\"摘要级\"自动核对：把你论文中引用处的段落，与可公开获取的摘要/页面文本做关键词一致性比对。")
+    lines.append("- \"一致性高/中/低\"仅表示\"主题相关性\"的启发式强弱，不能替代逐段阅读原文；尤其当论文段落为中文而摘要为英文时，自动分数会偏保守。")
+    lines.append("- 建议优先人工复核\"一致性=低\"以及\"不确定\"的引用点。")
+    lines.append("")
+
+    lines.append("## 总览")
+    lines.append("")
+    lines.append(f"- 引用点总数（按 cite 命令逐次计数）：{total_occ}")
+    lines.append(f"- 成功获取摘要的条目数：{abstract_ok}")
+    lines.append(f"- 未获取摘要的条目数：{abstract_missing}")
+    lines.append(f"- 标记为一致性=低的引用点：{flagged_low}")
+    lines.append(f"- 标记为不确定的引用点：{flagged_uncertain}")
+    lines.append("")
+
+    lines.append("## 逐条核查（按 Bib key）")
+    lines.append("")
+
+    for key in sorted(entries.keys()):
+        entry = entries[key]
+        vr = verifications.get(key)
+        ev = evidence_by_key.get(key)
+
+        title = entry.fields.get("title", "")
+        year = entry.fields.get("year", "")
+
+        lines.append(f"### `{key}` — {md_escape(title)} ({year})")
+        lines.append("")
+        if ev:
+            lines.append(f"- 证据来源：{ev.source}")
+            if ev.url:
+                lines.append(f"- 证据链接：{ev.url}")
+            if ev.http_status is not None:
+                lines.append(f"- 证据 HTTP：{ev.http_status}")
+            if ev.error:
+                lines.append(f"- 证据抓取提示：{md_escape(ev.error)}")
+
+            if ev.abstract:
+                snippet = truncate_text(ev.abstract, max_len=900)
+                lines.append("- 摘要（节选）：")
+                lines.append(f"  - {md_escape(snippet)}")
+            else:
+                lines.append("- 摘要：未获取")
+
+        # Also include the verified links to help manual checking.
+        if vr:
+            links = format_links(vr)
+            if links:
+                lines.append("- 可访问链接（用于人工核对）：")
+                for lk in links:
+                    lines.append(f"  - {lk}")
+
+        occs = key_to_occ.get(key, [])
+        lines.append(f"- 论文中引用位置：{len(occs)} 处")
+        if not occs:
+            lines.append("")
+            continue
+
+        for o in occs:
+            lvl, reason, common, jt, ja = classify_support(
+                context=o.context,
+                ref_title=title,
+                evidence_abstract=(ev.abstract if ev else None),
+            )
+            lines.append(f"  - {rel(o.tex_path)}:{o.line_no}  ({o.command})")
+            lines.append(f"    - 一致性：{lvl} — {md_escape(reason)}")
+            lines.append(f"    - 关键词重合：{', '.join(common) if common else '（无）'}")
+            lines.append(f"    - 分数：J(title)={jt:.3f}; J(abstract)={ja:.3f}")
+            lines.append(f"    - 引用行：{md_escape(truncate_text(o.line_text, max_len=220))}")
+            lines.append(f"    - 段落（节选）：{md_escape(truncate_text(o.context, max_len=420))}")
+        lines.append("")
+
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def format_links(vr: VerificationResult) -> List[str]:
     links: List[str] = []
     if vr.doi_url:
@@ -1106,6 +1636,11 @@ def main(argv: Sequence[str]) -> int:
     ap.add_argument("--bib", default="nkthesis.bib", help="BibTeX file (default: nkthesis.bib)")
     ap.add_argument("--main-tex", default="main.tex", help="Main TeX file to find included chapters (default: main.tex)")
     ap.add_argument("--output", default="reference_verification_report.md", help="Output markdown report path")
+    ap.add_argument(
+        "--support-report",
+        default=None,
+        help="Optional: write an additional markdown report to heuristically check whether each citation context is supported by publicly available abstracts/pages",
+    )
     ap.add_argument("--include-all-tex", action="store_true", help="Scan all .tex under root (instead of only files included by main.tex)")
     ap.add_argument("--include-manual", action="store_true", help="Include manual.tex when scanning all .tex")
     ap.add_argument("--no-network", action="store_true", help="Skip all network checks")
@@ -1117,6 +1652,7 @@ def main(argv: Sequence[str]) -> int:
     bib_path = (root / args.bib).resolve()
     main_tex = (root / args.main_tex).resolve()
     out_path = (root / args.output).resolve()
+    support_out_path = (root / args.support_report).resolve() if args.support_report else None
 
     if not bib_path.exists():
         print(f"ERROR: bib file not found: {bib_path}", file=sys.stderr)
@@ -1166,7 +1702,7 @@ def main(argv: Sequence[str]) -> int:
         vr = verify_entry(entries[key], network=network, polite_delay_s=float(args.delay))
         verifications[key] = vr
 
-    # Write report
+    # Write report (existence + link verification)
     rel = lambda p: p.relative_to(root).as_posix()
 
     lines: List[str] = []
@@ -1264,13 +1800,27 @@ def main(argv: Sequence[str]) -> int:
         if occs:
             for o in occs:
                 lines.append(f"  - {rel(o.tex_path)}:{o.line_no}  ({o.command})")
-                lines.append(f"    - 上下文：{md_escape(o.context)}")
+                lines.append(f"    - 上下文：{md_escape(truncate_text(o.context, max_len=360))}")
         else:
             lines.append("  - （未在扫描的 TeX 文件中发现引用）")
         lines.append("")
 
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote report: {out_path}")
+
+    if support_out_path is not None:
+        write_support_report(
+            root=root,
+            out_path=support_out_path,
+            bib_path=bib_path,
+            tex_files=tex_files,
+            entries=entries,
+            verifications=verifications,
+            key_to_occ=key_to_occ,
+            network=network,
+            polite_delay_s=float(args.delay),
+        )
+        print(f"Wrote support report: {support_out_path}")
 
     # Exit code: 0 ok; 1 if any missing keys
     return 1 if missing_in_bib else 0
