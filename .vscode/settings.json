@@ -71,5 +71,8 @@
         "*.fdb_latexmk",
         "*.bcf",
         "*.run.xml"
-    ]
+    ],
+    "[latex]": {
+        "editor.wordWrap": "on"
+    }
 }
