@@ -1,27 +1,24 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Reference audit for LaTeX + BibTeX projects.
+"""Reference audit for LaTeX + BibTeX projects (no third-party deps).
 
-Goals:
-- Verify that every cited key exists in the .bib file
-- List where each key is cited (file/line + surrounding context)
-- Try to resolve each reference to an external identifier/link (DOI/URL/arXiv)
-- Optionally validate existence via Crossref/URL reachability
+Features
+- Check that every cited key exists in the .bib file
+- List where each key is cited (file/line + context)
+- Resolve each reference to verifiable links (DOI / URL / arXiv / OpenReview / NeurIPS)
+- Optionally validate existence via Crossref/arXiv/OpenReview/NeurIPS and URL reachability
+- (Optional) Generate an "abstract-level support" report:
+  For each citation context, fetch a public abstract/page text and do a conservative
+  keyword-overlap heuristic to help spot potentially unsupported citations.
 
-This script intentionally avoids third‑party dependencies.
-
-Usage (from repo root):
+Usage (from repo root)
   python tools/reference_audit.py --output reference_verification_report.md
-
-Network:
-- Uses Crossref REST API where possible.
-- Uses plain URL reachability checks (GET) with short timeouts.
+  python tools/reference_audit.py --output reference_verification_report.md --support-report citation_support_report.md
 """
 
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import html
 import json
 import re
@@ -35,7 +32,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 
 @dataclass
@@ -58,20 +55,17 @@ class CiteOccurrence:
 
 @dataclass
 class VerificationResult:
-    # High-level
     status: str  # ok | maybe | fail | skipped
     summary: str
 
-    # Links
     doi: Optional[str] = None
     doi_url: Optional[str] = None
     url: Optional[str] = None
-    url_source: Optional[str] = None  # bib | heuristic
+    url_source: Optional[str] = None  # bib | heuristic | openreview | neurips
     arxiv_id: Optional[str] = None
     arxiv_url: Optional[str] = None
     arxiv_source: Optional[str] = None  # bib | api
 
-    # Crossref matching
     crossref_matched: bool = False
     crossref_score: Optional[float] = None
     crossref_doi: Optional[str] = None
@@ -79,25 +73,25 @@ class VerificationResult:
     crossref_title: Optional[str] = None
     crossref_year: Optional[int] = None
 
-    # Reachability
     url_http_status: Optional[int] = None
     doi_crossref_http_status: Optional[int] = None
     arxiv_http_status: Optional[int] = None
 
-    # Diagnostics
     error: Optional[str] = None
 
 
-ARXIV_ID_RE = re.compile(r"(?:arXiv\s*:\s*|arXiv\s+preprint\s+arXiv\s*:\s*)(?P<id>\d{4}\.\d{4,5})(?:v\d+)?", re.积分梯度归因NORECASE)
+ARXIV_ID_RE = re.compile(
+    r"(?:arXiv\s*:\s*|arXiv\s+preprint\s+arXiv\s*:\s*)(?P<id>\d{4}\.\d{4,5})(?:v\d+)?",
+    re.IGNORECASE,
+)
 ARXIV_ID_SIMPLE_RE = re.compile(r"\b(?P<id>\d{4}\.\d{4,5})(?:v\d+)?\b")
 
 CITE_CMD_RE = re.compile(
-    r"\\(?P<cmd>[A-Za-z]*cite[A-Za-z]*|upcite|nocite)"  # command
-    r"\s*(?:\[[^\]]*\]\s*)*"  # optional args (0..n)
-    r"\{(?P<keys>[^}]*)\}",  # keys
+    r"\\(?P<cmd>[A-Za-z]*cite[A-Za-z]*|upcite|nocite)"
+    r"\s*(?:\[[^\]]*\]\s*)*"
+    r"\{(?P<keys>[^}]*)\}",
 )
 
-# Matching thresholds
 CROSSREF_OK_SCORE = 0.84
 CROSSREF_MAYBE_SCORE = 0.75
 ARXIV_OK_SCORE = 0.88
@@ -105,12 +99,12 @@ ARXIV_OK_SCORE = 0.88
 
 def strip_tex_comment(line: str) -> str:
     r"""Remove TeX comments (%) while preserving escaped \%."""
+
     out_chars: List[str] = []
     i = 0
     while i < len(line):
         ch = line[i]
         if ch == "%":
-            # if escaped with backslash, keep it
             if i > 0 and line[i - 1] == "\\":
                 out_chars.append(ch)
                 i += 1
@@ -125,12 +119,20 @@ def normalize_whitespace(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def truncate_text(text: str, *, max_len: int) -> str:
+    if len(text) <= max_len:
+        return text
+    if max_len <= 1:
+        return "…"
+    cut = max(0, max_len - 2)
+    return text[:cut].rstrip() + " …"
+
+
 def normalize_title(text: str) -> str:
-    # remove math, braces, and common LaTeX escapes
     text = re.sub(r"\$[^$]*\$", " ", text)
     text = text.replace("{", " ").replace("}", " ")
     text = text.replace("\\&", " and ")
-    text = re.sub(r"\\[A-Za-z]+\s*", " ", text)  # commands
+    text = re.sub(r"\\[A-Za-z]+\s*", " ", text)
     text = re.sub(r"[^A-Za-z0-9]+", " ", text)
     return normalize_whitespace(text.lower())
 
@@ -146,13 +148,10 @@ def normalize_container(text: str) -> str:
 def fold_to_ascii(text: str) -> str:
     if not text:
         return ""
-    return "".join(
-        ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch)
-    )
+    return "".join(ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch))
 
 
 def normalize_name_token(text: str) -> str:
-    # Make author matching robust across BibTeX LaTeX escapes and Unicode (e.g., Müller).
     text = fold_to_ascii(text)
     normalized = normalize_title(text)
     return normalized.replace(" ", "")
@@ -160,14 +159,12 @@ def normalize_name_token(text: str) -> str:
 
 def get_bib_year(entry: BibEntry) -> Optional[int]:
     try:
-        y = int((entry.fields.get("year") or "").strip())
-        return y
+        return int((entry.fields.get("year") or "").strip())
     except Exception:
         return None
 
 
 def get_bib_container(entry: BibEntry) -> Optional[str]:
-    # Prefer journal if present; else booktitle.
     journal = (entry.fields.get("journal") or "").strip()
     booktitle = (entry.fields.get("booktitle") or "").strip()
     if journal and "arxiv" not in journal.lower():
@@ -182,10 +179,9 @@ def looks_like_preprint_venue(entry: BibEntry) -> bool:
     booktitle = (entry.fields.get("booktitle") or "").lower()
     if "arxiv" in journal:
         return True
-    # Common venues that frequently have arXiv versions and may lack DOI.
     if "iclr" in booktitle or "learning representations" in booktitle:
         return True
-    if "neurips" in booktitle or "neural information processing systems" in booktitle:
+    if "neurips" in booktitle or "neural information processing systems" in booktitle or "nips" in booktitle:
         return True
     if "icml" in booktitle or "machine learning" in booktitle:
         return True
@@ -193,7 +189,6 @@ def looks_like_preprint_venue(entry: BibEntry) -> bool:
 
 
 def looks_like_openreview_venue(entry: BibEntry) -> bool:
-    """Heuristic for venues commonly hosted on OpenReview (e.g., ICLR)."""
     journal = (entry.fields.get("journal") or "").lower()
     booktitle = (entry.fields.get("booktitle") or "").lower()
     if "openreview" in journal or "openreview" in booktitle:
@@ -205,7 +200,11 @@ def looks_like_openreview_venue(entry: BibEntry) -> bool:
 
 def looks_like_neurips_venue(entry: BibEntry) -> bool:
     booktitle = (entry.fields.get("booktitle") or "").lower()
-    return ("neurips" in booktitle) or ("nips" in booktitle) or ("neural information processing systems" in booktitle)
+    return (
+        "neurips" in booktitle
+        or "nips" in booktitle
+        or "neural information processing systems" in booktitle
+    )
 
 
 def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
@@ -227,7 +226,6 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
         i = at + 1
         i = skip_ws(i)
 
-        # entry type
         m = re.match(r"[A-Za-z]+", text[i:])
         if not m:
             continue
@@ -240,7 +238,6 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
         close_delim = "}" if open_delim == "{" else ")"
         i += 1
 
-        # key
         i = skip_ws(i)
         key_start = i
         while i < n and text[i] not in ",\n\r":
@@ -249,14 +246,11 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
         if not key:
             continue
 
-        # move past comma
         comma = text.find(",", i)
         if comma == -1:
             continue
         i = comma + 1
 
-        # parse until close_delim at depth 0
-        fields: Dict[str, str] = {}
         raw_start = at
         depth = 1
         body_start = i
@@ -269,9 +263,9 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
             i += 1
         raw_end = i
         raw_block = text[raw_start:raw_end]
-        body = text[body_start:raw_end - 1]  # exclude closing delim
+        body = text[body_start : raw_end - 1]
 
-        # field parsing within body
+        fields: Dict[str, str] = {}
         j = 0
         bn = len(body)
 
@@ -282,14 +276,12 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
 
         while j < bn:
             j = body_skip(j)
-            # consume leading commas
             while j < bn and body[j] == ",":
                 j += 1
                 j = body_skip(j)
             if j >= bn:
                 break
 
-            # field name
             name_match = re.match(r"[A-Za-z][A-Za-z0-9_-]*", body[j:])
             if not name_match:
                 break
@@ -303,7 +295,6 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
             if j >= bn:
                 break
 
-            # value
             if body[j] == "{":
                 depth2 = 1
                 j += 1
@@ -314,7 +305,7 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
                     elif body[j] == "}":
                         depth2 -= 1
                     j += 1
-                val = body[val_start:j - 1]
+                val = body[val_start : j - 1]
             elif body[j] == '"':
                 j += 1
                 val_start = j
@@ -323,7 +314,7 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
                         break
                     j += 1
                 val = body[val_start:j]
-                j += 1  # closing quote
+                j += 1
             else:
                 val_start = j
                 while j < bn and body[j] not in ",\n\r":
@@ -338,21 +329,16 @@ def parse_bibtex(path: Path) -> Dict[str, BibEntry]:
 
 
 def parse_included_tex_files(main_tex: Path) -> List[Path]:
-    # Look for \include{foo} and \input{foo}
     text = main_tex.read_text(encoding="utf-8")
-    includes = []
+    includes: List[Path] = []
     for cmd in ("include", "input"):
         for m in re.finditer(r"\\" + cmd + r"\{([^}]+)\}", text):
             name = m.group(1).strip()
             if not name:
                 continue
-            if name.endswith(".tex"):
-                path = main_tex.parent / name
-            else:
-                path = main_tex.parent / f"{name}.tex"
+            path = main_tex.parent / (name if name.endswith(".tex") else f"{name}.tex")
             includes.append(path)
 
-    # de-dup while preserving order
     seen: set[Path] = set()
     ordered: List[Path] = []
     for p in includes:
@@ -376,7 +362,6 @@ def find_citations_in_tex(tex_path: Path) -> List[CiteOccurrence]:
             if not keys:
                 continue
 
-            # Context: whole paragraph (between blank lines)
             start = idx
             while start > 0 and lines[start - 1].strip() != "":
                 start -= 1
@@ -386,7 +371,6 @@ def find_citations_in_tex(tex_path: Path) -> List[CiteOccurrence]:
 
             para_lines = [strip_tex_comment(l).strip() for l in lines[start : end + 1]]
             context = normalize_whitespace(" ".join([l for l in para_lines if l]))
-
             line_text = normalize_whitespace(line.strip())
 
             occurrences.append(
@@ -404,7 +388,6 @@ def find_citations_in_tex(tex_path: Path) -> List[CiteOccurrence]:
 
 
 def extract_arxiv_id(entry: BibEntry) -> Optional[str]:
-    # explicit fields
     for field_name in ("eprint", "arxiv", "arxivid"):
         val = entry.fields.get(field_name)
         if not val:
@@ -413,7 +396,6 @@ def extract_arxiv_id(entry: BibEntry) -> Optional[str]:
         if m:
             return m.group("id")
 
-    # from journal/note/howpublished
     for field_name in ("journal", "note", "howpublished"):
         val = entry.fields.get(field_name)
         if not val:
@@ -421,18 +403,16 @@ def extract_arxiv_id(entry: BibEntry) -> Optional[str]:
         m = ARXIV_ID_RE.search(val)
         if m:
             return m.group("id")
-        m2 = re.search(r"arXiv\s*:\s*(\d{4}\.\d{4,5})", val, re.积分梯度归因NORECASE)
+        m2 = re.search(r"arXiv\s*:\s*(\d{4}\.\d{4,5})", val, re.IGNORECASE)
         if m2:
             return m2.group(1)
     return None
 
 
 def heuristic_url(entry: BibEntry) -> Optional[str]:
-    """Best-effort URL suggestions for references that often lack DOI/URL in BibTeX."""
     key = entry.key.lower()
     title = (entry.fields.get("title") or "").lower()
     if key == "lecun2010mnist" or ("mnist" in title and "digit" in title):
-        # Common canonical page for MNIST dataset.
         return "http://yann.lecun.com/exdb/mnist/"
     return None
 
@@ -445,7 +425,7 @@ def http_get(
     max_bytes: Optional[int] = 8192,
 ) -> Tuple[Optional[int], Optional[bytes], Optional[str]]:
     hdrs = {
-        "User-Agent": "G-thesis-reference-audit/1.0",
+        "User-Agent": "G-thesis-reference-audit/1.1",
         "Accept": "*/*",
     }
     if headers:
@@ -458,7 +438,6 @@ def http_get(
             data = resp.read() if max_bytes is None else resp.read(max_bytes)
             return int(status) if status is not None else 200, data, None
     except urllib.error.HTTPError as e:
-        # even for 404 etc, return status
         try:
             data = e.read(1024)
         except Exception:
@@ -469,7 +448,6 @@ def http_get(
 
 
 def http_get_json(url: str, *, timeout: float = 12.0) -> Tuple[Optional[int], Optional[dict], Optional[str]]:
-    # Crossref responses can exceed 8KB; read a larger capped payload.
     status, data, err = http_get(
         url,
         timeout=timeout,
@@ -493,16 +471,14 @@ def title_similarity(a: str, b: str) -> float:
 
 
 def parse_first_author_family(author_field: str) -> Optional[str]:
-    # BibTeX often uses: "Last, First and Last2, First2"
     authors = [a.strip() for a in author_field.split(" and ") if a.strip()]
     if not authors:
         return None
     first = authors[0]
     if "," in first:
-        family = first.split(",", 1)[0].strip()
-        return family.lower() or None
+        return (first.split(",", 1)[0].strip().lower() or None)
     parts = first.split()
-    return (parts[-1].lower() if parts else None)
+    return parts[-1].lower() if parts else None
 
 
 def crossref_best_match(entry: BibEntry, *, rows: int = 5) -> Tuple[Optional[dict], Optional[float], Optional[str]]:
@@ -511,9 +487,7 @@ def crossref_best_match(entry: BibEntry, *, rows: int = 5) -> Tuple[Optional[dic
         return None, None, "missing title"
 
     bib_year = get_bib_year(entry)
-    bib_author_family_raw = (
-        parse_first_author_family(entry.fields.get("author", "")) if entry.fields.get("author") else None
-    )
+    bib_author_family_raw = parse_first_author_family(entry.fields.get("author", "")) if entry.fields.get("author") else None
     bib_author_family = normalize_name_token(bib_author_family_raw) if bib_author_family_raw else None
     bib_container = get_bib_container(entry)
 
@@ -539,7 +513,6 @@ def crossref_best_match(entry: BibEntry, *, rows: int = 5) -> Tuple[Optional[dic
     if bib_year:
         base["filter"] = f"from-pub-date:{bib_year-1}-01-01,until-pub-date:{bib_year+1}-12-31"
 
-    # Try stricter queries first, then relax.
     attempts: List[Dict[str, str]] = [dict(base)]
     if "query.container-title" in base:
         p = dict(base)
@@ -565,32 +538,23 @@ def crossref_best_match(entry: BibEntry, *, rows: int = 5) -> Tuple[Optional[dic
 
     best_item = None
     best_score = -1.0
-
     for item in items:
         item_titles = item.get("title") or []
         item_title = item_titles[0] if item_titles else ""
         ts = title_similarity(title, item_title)
 
-        # year
         item_year = None
         for yr_field in ("published-print", "published-online", "issued", "created"):
             parts = ((item.get(yr_field) or {}).get("date-parts") or [])
             if parts and parts[0] and isinstance(parts[0][0], int):
                 item_year = int(parts[0][0])
                 break
+
         year_score = 0.0
         if bib_year and item_year:
             diff = abs(bib_year - item_year)
-            if diff == 0:
-                year_score = 1.0
-            elif diff == 1:
-                year_score = 0.7
-            elif diff == 2:
-                year_score = 0.4
-            else:
-                year_score = 0.0
+            year_score = 1.0 if diff == 0 else (0.7 if diff == 1 else (0.4 if diff == 2 else 0.0))
 
-        # first author family
         author_score = 0.0
         if bib_author_family:
             cr_authors = item.get("author") or []
@@ -600,7 +564,6 @@ def crossref_best_match(entry: BibEntry, *, rows: int = 5) -> Tuple[Optional[dic
                 if cr_family and cr_family == bib_author_family:
                     author_score = 1.0
 
-        # container title (journal / proceedings)
         container_score = 0.0
         if bib_container:
             item_containers = item.get("container-title") or []
@@ -622,26 +585,19 @@ def crossref_best_match(entry: BibEntry, *, rows: int = 5) -> Tuple[Optional[dic
 
 
 def arxiv_best_match(entry: BibEntry, *, max_results: int = 10) -> Tuple[Optional[str], Optional[float], Optional[str]]:
-    """Resolve an arXiv id by searching arXiv API with title (+ optional author).
-
-    Returns: (arxiv_id, score, error)
-    """
     title = entry.fields.get("title")
     if not title:
         return None, None, "missing title"
 
-    bib_author_family_raw = (
-        parse_first_author_family(entry.fields.get("author", "")) if entry.fields.get("author") else None
-    )
+    bib_author_family_raw = parse_first_author_family(entry.fields.get("author", "")) if entry.fields.get("author") else None
     bib_author_family = normalize_name_token(bib_author_family_raw) if bib_author_family_raw else None
     bib_year = get_bib_year(entry)
 
-    # Build search queries using a cleaned title (avoid LaTeX/math breaking arXiv search).
     cleaned_title = normalize_title(title)
     words = cleaned_title.split() if cleaned_title else []
     phrase = " ".join(words[:16]) if words else cleaned_title
     phrase = (phrase or "").strip() or title
-    phrase = phrase.replace('"', " ")  # avoid breaking quotes in query
+    phrase = phrase.replace('"', " ")
     phrase = normalize_whitespace(phrase)
 
     stopwords = {
@@ -695,7 +651,6 @@ def arxiv_best_match(entry: BibEntry, *, max_results: int = 10) -> Tuple[Optiona
             terms.append(f"{prefix}:{w}")
             if len(terms) >= max_terms:
                 break
-        # Require a few terms; otherwise too broad.
         if len(terms) < 3:
             return None
         return " AND ".join(terms)
@@ -708,9 +663,6 @@ def arxiv_best_match(entry: BibEntry, *, max_results: int = 10) -> Tuple[Optiona
         queries.append(f'ti:"{phrase}" AND au:{bib_author_family}')
     queries.append(f'ti:"{phrase}"')
     queries.append(f'all:"{phrase}"')
-
-    # Fallback: token-AND queries are much less brittle than exact phrases.
-    # Example: AutoAttack title variants often break phrase queries.
     if and_ti and bib_author_family:
         queries.append(f"{and_ti} AND au:{bib_author_family}")
     if and_ti:
@@ -738,7 +690,6 @@ def arxiv_best_match(entry: BibEntry, *, max_results: int = 10) -> Tuple[Optiona
         if st != 200 or not data:
             last_err = err or f"arXiv http status {st}"
             continue
-
         try:
             root = ET.fromstring(data)
         except Exception as e:
@@ -749,7 +700,6 @@ def arxiv_best_match(entry: BibEntry, *, max_results: int = 10) -> Tuple[Optiona
             ent_title = (ent.findtext("atom:title", default="", namespaces=ns) or "").strip()
             ent_id_url = (ent.findtext("atom:id", default="", namespaces=ns) or "").strip()
             ent_published = (ent.findtext("atom:published", default="", namespaces=ns) or "").strip()
-
             if "/abs/" not in ent_id_url:
                 continue
             arxiv_id = ent_id_url.split("/abs/", 1)[1].strip().rstrip("/")
@@ -792,17 +742,11 @@ def arxiv_best_match(entry: BibEntry, *, max_results: int = 10) -> Tuple[Optiona
 
 
 def openreview_best_match(entry: BibEntry, *, limit: int = 10) -> Tuple[Optional[str], Optional[float], Optional[str]]:
-    """Resolve an OpenReview forum id by searching OpenReview's public notes/search endpoint.
-
-    Returns: (forum_id, score, error)
-    """
     title = entry.fields.get("title")
     if not title:
         return None, None, "missing title"
 
-    bib_author_family_raw = (
-        parse_first_author_family(entry.fields.get("author", "")) if entry.fields.get("author") else None
-    )
+    bib_author_family_raw = parse_first_author_family(entry.fields.get("author", "")) if entry.fields.get("author") else None
     bib_author_family = normalize_name_token(bib_author_family_raw) if bib_author_family_raw else None
 
     params = {
@@ -826,9 +770,7 @@ def openreview_best_match(entry: BibEntry, *, limit: int = 10) -> Tuple[Optional
         note_title = (content.get("title") or "").strip()
         if not note_title:
             continue
-
         ts = title_similarity(title, note_title)
-
         author_score = 0.0
         if bib_author_family:
             authors = content.get("authors") or []
@@ -855,7 +797,6 @@ def openreview_best_match(entry: BibEntry, *, limit: int = 10) -> Tuple[Optional
 
 
 def resolve_neurips_proceedings_url(entry: BibEntry) -> Tuple[Optional[str], Optional[str]]:
-    """Try to resolve a NeurIPS proceedings abstract URL by scraping the year index page."""
     title = entry.fields.get("title")
     if not title:
         return None, "missing title"
@@ -875,9 +816,10 @@ def resolve_neurips_proceedings_url(entry: BibEntry) -> Tuple[Optional[str], Opt
 
     best_href: Optional[str] = None
     best_score = -1.0
-
-    # Keep parsing simple and dependency-free.
-    anchor_re = re.compile(r"<a[^>]*href=(?:\"|')(?P<href>[^\"']+)(?:\"|')[^>]*>(?P<text>[^<]+)</a>", re.积分梯度归因NORECASE)
+    anchor_re = re.compile(
+        r"<a[^>]*href=(?:\"|')(?P<href>[^\"']+)(?:\"|')[^>]*>(?P<text>[^<]+)</a>",
+        re.IGNORECASE,
+    )
     for m in anchor_re.finditer(page_html):
         href = (m.group("href") or "").strip()
         text = html.unescape((m.group("text") or "").strip())
@@ -890,7 +832,6 @@ def resolve_neurips_proceedings_url(entry: BibEntry) -> Tuple[Optional[str], Opt
 
     if not best_href or best_score < 0.90:
         return None, "no neurips proceedings match"
-
     abs_url = urllib.parse.urljoin("https://proceedings.neurips.cc", best_href)
     return abs_url, None
 
@@ -924,13 +865,11 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
         arxiv_url=arxiv_url,
         arxiv_source=arxiv_source,
     )
-
     if not network:
         return vr
 
     verified_ok = False
 
-    # 1) If DOI present, validate via Crossref works/<doi>
     if doi:
         time.sleep(polite_delay_s)
         cr_url = "https://api.crossref.org/works/" + urllib.parse.quote(doi)
@@ -952,7 +891,6 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
             if err:
                 vr.error = err
 
-    # 2) arXiv reachability (if arXiv id already known)
     if vr.arxiv_url:
         time.sleep(polite_delay_s)
         st, _data, err = http_get(vr.arxiv_url)
@@ -965,9 +903,7 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
             if err and not vr.error:
                 vr.error = err
 
-    # 2.5) Venue-specific URL resolution (OpenReview / NeurIPS proceedings) when no URL is present.
     if (not verified_ok) and (not vr.url):
-        # OpenReview (e.g., ICLR) often has the canonical public record even without arXiv/DOI.
         if looks_like_openreview_venue(entry):
             time.sleep(polite_delay_s)
             forum, oscore, oerr = openreview_best_match(entry)
@@ -977,7 +913,6 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
             elif oerr and not vr.error:
                 vr.error = oerr
 
-        # NeurIPS proceedings can be parsed deterministically by year + title.
         if (not vr.url) and looks_like_neurips_venue(entry):
             time.sleep(polite_delay_s)
             purl, perr = resolve_neurips_proceedings_url(entry)
@@ -987,7 +922,6 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
             elif perr and not vr.error:
                 vr.error = perr
 
-    # 3) URL reachability (if provided or heuristic)
     if vr.url:
         time.sleep(polite_delay_s)
         st, _data, err = http_get(vr.url)
@@ -1000,8 +934,6 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
             if err and not vr.error:
                 vr.error = err
 
-    # 4) If it looks like a preprint/conference entry and we still don't have any verified link, try arXiv API search.
-    # This avoids cluttering the report with "no arXiv match" when we already verified via OpenReview/proceedings.
     if (not verified_ok) and (not vr.arxiv_id) and looks_like_preprint_venue(entry):
         time.sleep(polite_delay_s)
         aid, ascore, aerr = arxiv_best_match(entry)
@@ -1021,8 +953,6 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
         elif aerr and not vr.error:
             vr.error = aerr
 
-    # 5) Crossref title match (only when needed)
-    # Avoid injecting misleading DOIs when we already verified via arXiv for preprint-like venues.
     should_try_crossref = not vr.crossref_matched and (not (looks_like_preprint_venue(entry) and verified_ok))
     if should_try_crossref:
         time.sleep(polite_delay_s)
@@ -1054,11 +984,9 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
             if err and not vr.error:
                 vr.error = err
 
-    # Final status
     if verified_ok:
         vr.status = "ok"
     else:
-        # If we found some candidate info (Crossref matched) but couldn't verify reachability, keep maybe.
         if vr.crossref_matched and vr.crossref_score is not None and vr.crossref_score >= CROSSREF_MAYBE_SCORE:
             vr.status = "maybe"
         else:
@@ -1070,26 +998,47 @@ def verify_entry(entry: BibEntry, *, network: bool, polite_delay_s: float = 0.15
 
 
 def md_escape(text: str) -> str:
-    # minimal escaping
     return text.replace("\n", " ")
 
 
-def truncate_text(text: str, *, max_len: int) -> str:
-    if len(text) <= max_len:
-        return text
-    if max_len <= 1:
-        return "…"
-    # keep a little more headroom to avoid breaking words too often
-    cut = max(0, max_len - 2)
-    return text[:cut].rstrip() + " …"
+def format_links(vr: VerificationResult) -> List[str]:
+    links: List[str] = []
+    if vr.doi_url:
+        links.append(f"DOI: {vr.doi_url}")
+
+    crossref_trusted = vr.crossref_matched and (
+        vr.crossref_score is None
+        or (vr.crossref_score is not None and vr.crossref_score >= CROSSREF_OK_SCORE)
+    )
+    if crossref_trusted and vr.crossref_doi and not vr.doi_url:
+        links.append(f"DOI(来自Crossref): https://doi.org/{vr.crossref_doi}")
+
+    if vr.url:
+        if vr.url_source == "openreview":
+            links.append(f"OpenReview(来自API): {vr.url}")
+        elif vr.url_source == "neurips":
+            links.append(f"NeurIPS Proceedings(自动解析): {vr.url}")
+        else:
+            label = "URL" if (vr.url_source != "heuristic") else "URL(启发式)"
+            links.append(f"{label}: {vr.url}")
+
+    if crossref_trusted and vr.crossref_url and (not vr.url):
+        links.append(f"URL(来自Crossref): {vr.crossref_url}")
+
+    if vr.arxiv_url:
+        label = "arXiv" if (vr.arxiv_source != "api") else "arXiv(来自API)"
+        links.append(f"{label}: {vr.arxiv_url}")
+    return links
+
+
+# --- Support (abstract-level) report ---
 
 
 def strip_html_tags(text: str) -> str:
-    # best-effort HTML to plain text without third-party deps
     if not text:
         return ""
-    s = re.sub(r"<script\b[^>]*>.*?</script>", " ", text, flags=re.积分梯度归因NORECASE | re.DOTALL)
-    s = re.sub(r"<style\b[^>]*>.*?</style>", " ", s, flags=re.积分梯度归因NORECASE | re.DOTALL)
+    s = re.sub(r"<script\b[^>]*>.*?</script>", " ", text, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r"<style\b[^>]*>.*?</style>", " ", s, flags=re.IGNORECASE | re.DOTALL)
     s = re.sub(r"<[^>]+>", " ", s)
     s = html.unescape(s)
     return normalize_whitespace(s)
@@ -1098,7 +1047,6 @@ def strip_html_tags(text: str) -> str:
 def normalize_for_tokens(text: str) -> str:
     if not text:
         return ""
-    # Keep LaTeX command names as tokens (e.g., \infty -> infty)
     s = text.replace("\\&", " and ")
     s = s.replace("$", " ")
     s = s.replace("{", " ").replace("}", " ")
@@ -1108,7 +1056,6 @@ def normalize_for_tokens(text: str) -> str:
 
 
 SUPPORT_STOPWORDS = {
-    # English
     "a",
     "an",
     "the",
@@ -1143,7 +1090,6 @@ SUPPORT_STOPWORDS = {
     "those",
     "et",
     "al",
-    # common LaTeX-ish / thesis noise
     "cite",
     "nocite",
     "upcite",
@@ -1167,7 +1113,7 @@ def tokenize_support(text: str) -> List[str]:
     norm = normalize_for_tokens(text)
     if not norm:
         return []
-    toks = []
+    toks: List[str] = []
     for w in norm.split():
         if len(w) < 3:
             continue
@@ -1196,10 +1142,7 @@ class Evidence:
 
 
 def fetch_arxiv_evidence(arxiv_id: str) -> Evidence:
-    params = {
-        "id_list": arxiv_id,
-        "max_results": "1",
-    }
+    params = {"id_list": arxiv_id, "max_results": "1"}
     api_url = "https://export.arxiv.org/api/query?" + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
     st, data, err = http_get(api_url, headers={"Accept": "application/atom+xml"}, max_bytes=2_000_000)
     if st != 200 or not data:
@@ -1257,7 +1200,6 @@ def unwrap_openreview_field(val: object) -> Optional[str]:
         items = [str(x).strip() for x in val if str(x).strip()]
         return normalize_whitespace(" ".join(items)) or None
     if isinstance(val, dict):
-        # OpenReview sometimes returns {"value": "..."}
         if "value" in val and isinstance(val["value"], str):
             return val["value"].strip() or None
         if "values" in val and isinstance(val["values"], list):
@@ -1266,11 +1208,18 @@ def unwrap_openreview_field(val: object) -> Optional[str]:
     return None
 
 
+def forum_id_from_openreview_url(url: str) -> Optional[str]:
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        return None
+    qs = urllib.parse.parse_qs(parsed.query or "")
+    fid = (qs.get("id") or qs.get("forum") or [None])[0]
+    return fid.strip() if isinstance(fid, str) and fid.strip() else None
+
+
 def fetch_openreview_evidence(forum_id: str) -> Evidence:
-    params = {
-        "forum": forum_id,
-        "limit": "1",
-    }
+    params = {"forum": forum_id, "limit": "1"}
     api_url = "https://api.openreview.net/notes?" + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
     st, data, err = http_get_json(api_url)
     if st != 200 or not data:
@@ -1294,7 +1243,7 @@ def fetch_openreview_evidence(forum_id: str) -> Evidence:
             error="openreview: no notes",
         )
 
-    content = (notes[0].get("content") or {})
+    content = notes[0].get("content") or {}
     title = unwrap_openreview_field(content.get("title"))
     abstract = unwrap_openreview_field(content.get("abstract"))
     return Evidence(
@@ -1320,40 +1269,33 @@ def fetch_neurips_evidence(proceedings_url: str) -> Evidence:
         )
 
     page = data.decode("utf-8", errors="replace")
-
-    # Title
     title = None
-    mt = re.search(r"<title>(?P<t>.*?)</title>", page, flags=re.积分梯度归因NORECASE | re.DOTALL)
+    mt = re.search(r"<title>(?P<t>.*?)</title>", page, flags=re.IGNORECASE | re.DOTALL)
     if mt:
         title = strip_html_tags(mt.group("t"))
 
     abstract = None
-    # Common pattern: <h4>Abstract</h4><p>...</p>
     m1 = re.search(
         r"<h4[^>]*>\s*Abstract\s*</h4>\s*<p[^>]*>(?P<a>.*?)</p>",
         page,
-        flags=re.积分梯度归因NORECASE | re.DOTALL,
+        flags=re.IGNORECASE | re.DOTALL,
     )
     if m1:
         abstract = strip_html_tags(m1.group("a"))
     if not abstract:
-        # Fallback: meta description
         m2 = re.search(
             r"<meta[^>]+name=(?:\"|')description(?:\"|')[^>]+content=(?:\"|')(?P<a>.*?)(?:\"|')",
             page,
-            flags=re.积分梯度归因NORECASE | re.DOTALL,
+            flags=re.IGNORECASE | re.DOTALL,
         )
         if m2:
             abstract = strip_html_tags(m2.group("a"))
 
-    abstract = normalize_whitespace(abstract) if abstract else None
-    title = normalize_whitespace(title) if title else None
-
     return Evidence(
         source="NeurIPS Proceedings",
         url=proceedings_url,
-        title=title,
-        abstract=abstract,
+        title=normalize_whitespace(title) if title else None,
+        abstract=normalize_whitespace(abstract) if abstract else None,
         http_status=st,
         error=None,
     )
@@ -1362,7 +1304,7 @@ def fetch_neurips_evidence(proceedings_url: str) -> Evidence:
 def fetch_crossref_evidence(doi: str) -> Evidence:
     api_url = "https://api.crossref.org/works/" + urllib.parse.quote(doi)
     st, data, err = http_get_json(api_url)
-    if st != 200 or not data or (data.get("status") != "ok"):
+    if st != 200 or not data or data.get("status") != "ok":
         return Evidence(
             source="Crossref",
             url=f"https://doi.org/{doi}",
@@ -1380,7 +1322,6 @@ def fetch_crossref_evidence(doi: str) -> Evidence:
         abstract = strip_html_tags(abstract)
     else:
         abstract = None
-
     return Evidence(
         source="Crossref",
         url=f"https://doi.org/{doi}",
@@ -1391,21 +1332,20 @@ def fetch_crossref_evidence(doi: str) -> Evidence:
     )
 
 
-def forum_id_from_openreview_url(url: str) -> Optional[str]:
-    try:
-        parsed = urllib.parse.urlparse(url)
-    except Exception:
-        return None
-    qs = urllib.parse.parse_qs(parsed.query or "")
-    fid = (qs.get("id") or qs.get("forum") or [None])[0]
-    return fid.strip() if isinstance(fid, str) and fid.strip() else None
-
-
 def fetch_best_evidence(entry: BibEntry, vr: VerificationResult, *, polite_delay_s: float) -> Evidence:
-    # Priority: arXiv > OpenReview > NeurIPS proceedings > Crossref (DOI)
     if vr.arxiv_id:
         time.sleep(polite_delay_s)
         return fetch_arxiv_evidence(vr.arxiv_id)
+
+    if looks_like_preprint_venue(entry):
+        time.sleep(polite_delay_s)
+        aid, ascore, _aerr = arxiv_best_match(entry)
+        if aid and ascore is not None and ascore >= ARXIV_OK_SCORE:
+            time.sleep(polite_delay_s)
+            ev = fetch_arxiv_evidence(aid)
+            if ev.abstract:
+                ev.source = f"arXiv(search score={ascore:.2f})"
+            return ev
 
     if vr.url and vr.url_source == "openreview":
         forum_id = forum_id_from_openreview_url(vr.url)
@@ -1421,7 +1361,6 @@ def fetch_best_evidence(entry: BibEntry, vr: VerificationResult, *, polite_delay
         time.sleep(polite_delay_s)
         return fetch_crossref_evidence(vr.doi)
 
-    # Fallback: URL exists but abstract unknown
     if vr.url:
         return Evidence(source="URL", url=vr.url, title=entry.fields.get("title"), abstract=None)
     return Evidence(source="(none)", url=None, title=entry.fields.get("title"), abstract=None)
@@ -1433,21 +1372,15 @@ def classify_support(
     ref_title: str,
     evidence_abstract: Optional[str],
 ) -> Tuple[str, str, List[str], float, float]:
-    """Return (level, reason, common_tokens, jaccard_title, jaccard_abs).
-
-    Level is a conservative heuristic: 高/中/低/不确定.
-    """
     ctx_tokens = set(tokenize_support(context))
     title_tokens = set(tokenize_support(ref_title))
     abs_tokens = set(tokenize_support(evidence_abstract or ""))
 
     common_title = ctx_tokens & title_tokens
     common_abs = ctx_tokens & abs_tokens
-
     jt = jaccard(ctx_tokens, title_tokens)
     ja = jaccard(ctx_tokens, abs_tokens) if abs_tokens else 0.0
 
-    # If the thesis context contains too few Latin tokens, automated matching is unreliable.
     if len(ctx_tokens) < 8:
         common = sorted(common_title or common_abs)
         return "不确定", "上下文英文关键词较少，自动比对不稳定", common[:12], jt, ja
@@ -1459,7 +1392,6 @@ def classify_support(
         common = sorted(common_title)
         return "不确定", "未获取摘要且标题重合较少，建议重点核对", common[:12], jt, ja
 
-    # With abstract
     if len(common_abs) >= 6 or ja >= 0.08:
         common = sorted(common_abs)
         return "高", "上下文与摘要关键词重合较多（主题一致性较高）", common[:12], jt, ja
@@ -1484,7 +1416,6 @@ def write_support_report(
 ) -> None:
     rel = lambda p: p.relative_to(root).as_posix()
 
-    # Fetch evidence once per key
     evidence_by_key: Dict[str, Evidence] = {}
     for key, entry in entries.items():
         vr = verifications.get(key)
@@ -1493,7 +1424,6 @@ def write_support_report(
             continue
         evidence_by_key[key] = fetch_best_evidence(entry, vr, polite_delay_s=polite_delay_s)
 
-    # Build stats
     total_occ = sum(len(v) for v in key_to_occ.values())
     abstract_ok = sum(1 for ev in evidence_by_key.values() if ev.abstract)
     abstract_missing = len(entries) - abstract_ok
@@ -1526,6 +1456,7 @@ def write_support_report(
     lines.append(f"- 扫描 TeX 文件数：{len(tex_files)}")
     lines.append(f"- 联网校验：{'否（--no-network）' if not network else '是'}")
     lines.append("")
+
     lines.append("## 重要说明")
     lines.append("")
     lines.append("- 本报告只做\"摘要级\"自动核对：把你论文中引用处的段落，与可公开获取的摘要/页面文本做关键词一致性比对。")
@@ -1549,12 +1480,12 @@ def write_support_report(
         entry = entries[key]
         vr = verifications.get(key)
         ev = evidence_by_key.get(key)
-
         title = entry.fields.get("title", "")
         year = entry.fields.get("year", "")
 
         lines.append(f"### `{key}` — {md_escape(title)} ({year})")
         lines.append("")
+
         if ev:
             lines.append(f"- 证据来源：{ev.source}")
             if ev.url:
@@ -1571,7 +1502,6 @@ def write_support_report(
             else:
                 lines.append("- 摘要：未获取")
 
-        # Also include the verified links to help manual checking.
         if vr:
             links = format_links(vr)
             if links:
@@ -1602,39 +1532,11 @@ def write_support_report(
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def format_links(vr: VerificationResult) -> List[str]:
-    links: List[str] = []
-    if vr.doi_url:
-        links.append(f"DOI: {vr.doi_url}")
-    # Only surface Crossref-derived links when confidence is high.
-    crossref_trusted = vr.crossref_matched and (
-        vr.crossref_score is None or (vr.crossref_score is not None and vr.crossref_score >= CROSSREF_OK_SCORE)
-    )
-    if crossref_trusted and vr.crossref_doi and not vr.doi_url:
-        links.append(f"DOI(来自Crossref): https://doi.org/{vr.crossref_doi}")
-
-    if vr.url:
-        if vr.url_source == "openreview":
-            links.append(f"OpenReview(来自API): {vr.url}")
-        elif vr.url_source == "neurips":
-            links.append(f"NeurIPS Proceedings(自动解析): {vr.url}")
-        else:
-            label = "URL" if (vr.url_source != "heuristic") else "URL(启发式)"
-            links.append(f"{label}: {vr.url}")
-    if crossref_trusted and vr.crossref_url and (not vr.url):
-        links.append(f"URL(来自Crossref): {vr.crossref_url}")
-
-    if vr.arxiv_url:
-        label = "arXiv" if (vr.arxiv_source != "api") else "arXiv(来自API)"
-        links.append(f"{label}: {vr.arxiv_url}")
-    return links
-
-
 def main(argv: Sequence[str]) -> int:
     ap = argparse.ArgumentParser(description="Audit BibTeX references and LaTeX citations.")
     ap.add_argument("--root", default=".", help="Project root (default: .)")
     ap.add_argument("--bib", default="nkthesis.bib", help="BibTeX file (default: nkthesis.bib)")
-    ap.add_argument("--main-tex", default="main.tex", help="Main TeX file to find included chapters (default: main.tex)")
+    ap.add_argument("--main-tex", default="main.tex", help="Main TeX file (default: main.tex)")
     ap.add_argument("--output", default="reference_verification_report.md", help="Output markdown report path")
     ap.add_argument(
         "--support-report",
@@ -1660,7 +1562,6 @@ def main(argv: Sequence[str]) -> int:
 
     entries = parse_bibtex(bib_path)
 
-    # Determine which tex files to scan
     tex_files: List[Path]
     if args.include_all_tex:
         tex_files = sorted(root.glob("**/*.tex"))
@@ -1674,13 +1575,8 @@ def main(argv: Sequence[str]) -> int:
 
     all_occurrences: List[CiteOccurrence] = []
     for tex in tex_files:
-        try:
-            all_occurrences.extend(find_citations_in_tex(tex))
-        except UnicodeDecodeError:
-            # best-effort fallback
-            all_occurrences.extend(find_citations_in_tex(Path(str(tex))))
+        all_occurrences.extend(find_citations_in_tex(tex))
 
-    # Build cite-key mapping
     key_to_occ: Dict[str, List[CiteOccurrence]] = {}
     cited_keys: List[str] = []
     for occ in all_occurrences:
@@ -1690,19 +1586,14 @@ def main(argv: Sequence[str]) -> int:
 
     cited_set = set(cited_keys)
     bib_keys = set(entries.keys())
-
     missing_in_bib = sorted(cited_set - bib_keys)
     unused_in_tex = sorted(bib_keys - cited_set)
 
-    # Verify each bib entry (only those cited, but also list unused)
     network = not args.no_network
-
     verifications: Dict[str, VerificationResult] = {}
     for key in sorted(entries.keys()):
-        vr = verify_entry(entries[key], network=network, polite_delay_s=float(args.delay))
-        verifications[key] = vr
+        verifications[key] = verify_entry(entries[key], network=network, polite_delay_s=float(args.delay))
 
-    # Write report (existence + link verification)
     rel = lambda p: p.relative_to(root).as_posix()
 
     lines: List[str] = []
@@ -1763,14 +1654,12 @@ def main(argv: Sequence[str]) -> int:
         if entry.fields.get("booktitle"):
             lines.append(f"- 会议/出处：{md_escape(entry.fields['booktitle'])}")
 
-        # Links
         links = format_links(vr)
         if links:
             lines.append("- 链接：")
             for lk in links:
                 lines.append(f"  - {lk}")
 
-        # Verification summary
         lines.append(f"- 存在性校验：{vr.status} — {vr.summary}")
         if vr.crossref_matched:
             extra = []
@@ -1794,7 +1683,6 @@ def main(argv: Sequence[str]) -> int:
         if vr.error:
             lines.append(f"- 错误/提示：{md_escape(vr.error)}")
 
-        # Citation occurrences
         occs = key_to_occ.get(key, [])
         lines.append(f"- 论文中引用位置：{len(occs)} 处")
         if occs:
@@ -1822,7 +1710,6 @@ def main(argv: Sequence[str]) -> int:
         )
         print(f"Wrote support report: {support_out_path}")
 
-    # Exit code: 0 ok; 1 if any missing keys
     return 1 if missing_in_bib else 0
 
 
