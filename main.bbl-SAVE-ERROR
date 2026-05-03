@@ -164,7 +164,7 @@
         {{hash=813bd95fe553e6079cd53a567b238287}{%
            family={Hinton},
            familyi={H\bibinitperiod},
-           given={Geoffrey\bibnamedelima E.},
+           given={Geoffrey\bibnamedelima E},
            giveni={G\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
       }
       \strng{namehash}{1a23c09aa65b3c2ade45ed18d8127375}
@@ -180,10 +180,9 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Advances in Neural Information Processing Systems (NeurIPS)}
-      \field{title}{ImageNet classification with deep convolutional neural networks}
+      \field{title}{Imagenet classification with deep convolutional neural networks}
+      \field{volume}{25}
       \field{year}{2012}
-      \field{pages}{1097\bibrangedash 1105}
-      \range{pages}{9}
     \endentry
     \entry{he2016resnet}{inproceedings}{}{}
       \name{author}{4}{}{%
@@ -220,7 +219,7 @@
       \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}
+      \field{booktitle}{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}
       \field{title}{Deep residual learning for image recognition}
       \field{year}{2016}
       \field{pages}{770\bibrangedash 778}
@@ -287,7 +286,7 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}
-      \field{title}{Robust physical-world attacks on deep learning models}
+      \field{title}{Robust physical-world attacks on deep learning visual classification}
       \field{year}{2018}
       \field{pages}{1625\bibrangedash 1634}
       \range{pages}{10}
@@ -299,32 +298,87 @@
            familyi={K\bibinitperiod},
            given={Alexey},
            giveni={A\bibinitperiod}}}%
-        {{hash=5d2585c11210cf1d4512e6e0a03ec315}{%
+        {{hash=d4f74ef4c79f3bb1e51e378184d8850e}{%
            family={Goodfellow},
            familyi={G\bibinitperiod},
-           given={Ian},
-           giveni={I\bibinitperiod}}}%
+           given={Ian\bibnamedelima J},
+           giveni={I\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
         {{hash=02404a92b0be3f52ec5ac08e41c13445}{%
            family={Bengio},
            familyi={B\bibinitperiod},
            given={Samy},
            giveni={S\bibinitperiod}}}%
       }
-      \strng{namehash}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{fullhash}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{fullhashraw}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{bibnamehash}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{authorbibnamehash}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{authornamehash}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{authorfullhash}{bc3421f067975eb2534d2fca504cf0a5}
-      \strng{authorfullhashraw}{bc3421f067975eb2534d2fca504cf0a5}
+      \strng{namehash}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{fullhash}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{fullhashraw}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{bibnamehash}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{authorbibnamehash}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{authornamehash}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{authorfullhash}{08c23aaf318d09c143f01ebcd5219048}
+      \strng{authorfullhashraw}{08c23aaf318d09c143f01ebcd5219048}
       \field{sortinit}{9}
       \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{International Conference on Learning Representations (ICLR) Workshop}
+      \field{booktitle}{Artificial intelligence safety and security}
       \field{title}{Adversarial examples in the physical world}
-      \field{year}{2017}
+      \field{year}{2018}
+      \field{pages}{99\bibrangedash 112}
+      \range{pages}{14}
+    \endentry
+    \entry{SamuelG.Finlayson2019Adversarial}{article}{}{}
+      \name{author}{6}{}{%
+        {{hash=4d738d3b01bc2dc04aa230fce390f59e}{%
+           family={Finlayson},
+           familyi={F\bibinitperiod},
+           given={Samuel\bibnamedelima G.},
+           giveni={S\bibinitperiod\bibinitdelim G\bibinitperiod}}}%
+        {{hash=604dbac4c1e35ade8d4b946c9202ba60}{%
+           family={Bowers},
+           familyi={B\bibinitperiod},
+           given={John\bibnamedelima D.},
+           giveni={J\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+        {{hash=4f8196e7fa7871e2f520507b56299bab}{%
+           family={Ito},
+           familyi={I\bibinitperiod},
+           given={Joichi},
+           giveni={J\bibinitperiod}}}%
+        {{hash=12c0bc1a69796ac1f720541e15a6c92a}{%
+           family={Zittrain},
+           familyi={Z\bibinitperiod},
+           given={Jonathan\bibnamedelima L.},
+           giveni={J\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+        {{hash=3333cfe95922b8f5d8bac7127e304455}{%
+           family={Beam},
+           familyi={B\bibinitperiod},
+           given={Andrew\bibnamedelima L.},
+           giveni={A\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+        {{hash=7d569ca862abfbea5bb908a4fd1990f5}{%
+           family={Kohane},
+           familyi={K\bibinitperiod},
+           given={Isaac\bibnamedelima S.},
+           giveni={I\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+      }
+      \strng{namehash}{a7791bb08e7bdc81ef65f003615eb258}
+      \strng{fullhash}{6e610bdca6279512163a6b791a49fa41}
+      \strng{fullhashraw}{6e610bdca6279512163a6b791a49fa41}
+      \strng{bibnamehash}{a7791bb08e7bdc81ef65f003615eb258}
+      \strng{authorbibnamehash}{a7791bb08e7bdc81ef65f003615eb258}
+      \strng{authornamehash}{a7791bb08e7bdc81ef65f003615eb258}
+      \strng{authorfullhash}{6e610bdca6279512163a6b791a49fa41}
+      \strng{authorfullhashraw}{6e610bdca6279512163a6b791a49fa41}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Science}
+      \field{number}{6433}
+      \field{title}{Adversarial attacks on medical machine learning}
+      \field{volume}{363}
+      \field{year}{2019}
+      \field{pages}{1287\bibrangedash 1289}
+      \range{pages}{3}
     \endentry
     \entry{madry2018pgd}{inproceedings}{}{}
       \name{author}{5}{}{%
@@ -375,7 +429,7 @@
         {{hash=d4f74ef4c79f3bb1e51e378184d8850e}{%
            family={Goodfellow},
            familyi={G\bibinitperiod},
-           given={Ian\bibnamedelima J.},
+           given={Ian\bibnamedelima J},
            giveni={I\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
         {{hash=8f128e70084608a2c29c497ebd794f87}{%
            family={Shlens},
@@ -402,7 +456,7 @@
       \field{labeltitlesource}{title}
       \field{journaltitle}{arXiv preprint arXiv:1412.6572}
       \field{title}{Explaining and harnessing adversarial examples}
-      \field{year}{2015}
+      \field{year}{2014}
     \endentry
     \entry{croce2020autoattack}{inproceedings}{}{}
       \name{author}{2}{}{%
@@ -430,7 +484,7 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{International Conference on Machine Learning (ICML)}
-      \field{title}{Reliable evaluation of adversarial robustness with an ensemble of attacks}
+      \field{title}{Reliable evaluation of adversarial robustness with an ensemble of diverse parameter-free attacks}
       \field{year}{2020}
       \field{pages}{2206\bibrangedash 2216}
       \range{pages}{11}
@@ -440,7 +494,7 @@
         {{hash=7c16e8d36475e58d4f2d161e6ecb7704}{%
            family={Brown},
            familyi={B\bibinitperiod},
-           given={Tom\bibnamedelima B.},
+           given={Tom\bibnamedelima B},
            giveni={T\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
         {{hash=b9646cb975a64f853702acf062460ddf}{%
            family={Mané},
@@ -540,11 +594,11 @@
            familyi={N\bibinitperiod},
            given={Mahyar},
            giveni={M\bibinitperiod}}}%
-        {{hash=1cf7e4a968493e3c27f3b9886f8c8767}{%
+        {{hash=268f7154f9b91a33f11229a488587de4}{%
            family={Ghiasi},
            familyi={G\bibinitperiod},
-           given={Amin},
-           giveni={A\bibinitperiod}}}%
+           given={Mohammad\bibnamedelima Amin},
+           giveni={M\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
         {{hash=05cfd0bcb3bc857f515fc6e69d6ca277}{%
            family={Xu},
            familyi={X\bibinitperiod},
@@ -563,7 +617,7 @@
         {{hash=dcd7f4d5fae52e84cdfcfb7809b2d5a2}{%
            family={Davis},
            familyi={D\bibinitperiod},
-           given={Larry\bibnamedelima S.},
+           given={Larry\bibnamedelima S},
            giveni={L\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
         {{hash=3a2adb4bdc707f5f21becb12b393db90}{%
            family={Taylor},
@@ -576,23 +630,22 @@
            given={Tom},
            giveni={T\bibinitperiod}}}%
       }
-      \strng{namehash}{47d528a00ad221e0bd4efead155b4f7e}
-      \strng{fullhash}{07652044843b72c4c570f4165bbffd3c}
-      \strng{fullhashraw}{07652044843b72c4c570f4165bbffd3c}
-      \strng{bibnamehash}{47d528a00ad221e0bd4efead155b4f7e}
-      \strng{authorbibnamehash}{47d528a00ad221e0bd4efead155b4f7e}
-      \strng{authornamehash}{47d528a00ad221e0bd4efead155b4f7e}
-      \strng{authorfullhash}{07652044843b72c4c570f4165bbffd3c}
-      \strng{authorfullhashraw}{07652044843b72c4c570f4165bbffd3c}
+      \strng{namehash}{8569b65f2b425b2bb461e632cd763083}
+      \strng{fullhash}{3774658404e309ac0af9f1c91a0a3bdd}
+      \strng{fullhashraw}{3774658404e309ac0af9f1c91a0a3bdd}
+      \strng{bibnamehash}{8569b65f2b425b2bb461e632cd763083}
+      \strng{authorbibnamehash}{8569b65f2b425b2bb461e632cd763083}
+      \strng{authornamehash}{8569b65f2b425b2bb461e632cd763083}
+      \strng{authorfullhash}{3774658404e309ac0af9f1c91a0a3bdd}
+      \strng{authorfullhashraw}{3774658404e309ac0af9f1c91a0a3bdd}
       \field{sortinit}{1}
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{Advances in Neural Information Processing Systems (NeurIPS)}
+      \field{journaltitle}{Advances in Neural Information Processing Systems (NeurIPS)}
       \field{title}{Adversarial training for free!}
+      \field{volume}{32}
       \field{year}{2019}
-      \field{pages}{3358\bibrangedash 3369}
-      \range{pages}{12}
     \endentry
     \entry{wong2020fast}{inproceedings}{}{}
       \name{author}{3}{}{%
@@ -609,7 +662,7 @@
         {{hash=0288715a83a3349e44f9292c5c2149f7}{%
            family={Kolter},
            familyi={K\bibinitperiod},
-           given={J.\bibnamedelimi Zico},
+           given={J\bibnamedelima Zico},
            giveni={J\bibinitperiod\bibinitdelim Z\bibinitperiod}}}%
       }
       \strng{namehash}{8d3a7b0f195664b5cbf6c82d2c461371}
@@ -620,8 +673,8 @@
       \strng{authornamehash}{8d3a7b0f195664b5cbf6c82d2c461371}
       \strng{authorfullhash}{8d3a7b0f195664b5cbf6c82d2c461371}
       \strng{authorfullhashraw}{8d3a7b0f195664b5cbf6c82d2c461371}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{International Conference on Learning Representations (ICLR)}
@@ -676,30 +729,30 @@
     \endentry
     \entry{cohen2019certified}{inproceedings}{}{}
       \name{author}{3}{}{%
-        {{hash=cac269ad7bcb68d9224c66cf4554bb97}{%
+        {{hash=8c2b9197f1055a9926fd793d0c95bab3}{%
            family={Cohen},
            familyi={C\bibinitperiod},
-           given={Jeremy\bibnamedelima M.},
-           giveni={J\bibinitperiod\bibinitdelim M\bibinitperiod}}}%
+           given={Jeremy},
+           giveni={J\bibinitperiod}}}%
         {{hash=625622beae85d5f357605ad44597fe78}{%
            family={Rosenfeld},
            familyi={R\bibinitperiod},
            given={Elan},
            giveni={E\bibinitperiod}}}%
-        {{hash=0288715a83a3349e44f9292c5c2149f7}{%
+        {{hash=b342ec34892f5c1daa80eb7dea5244b5}{%
            family={Kolter},
            familyi={K\bibinitperiod},
-           given={J.\bibnamedelimi Zico},
-           giveni={J\bibinitperiod\bibinitdelim Z\bibinitperiod}}}%
+           given={Zico},
+           giveni={Z\bibinitperiod}}}%
       }
-      \strng{namehash}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{fullhash}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{fullhashraw}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{bibnamehash}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{authorbibnamehash}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{authornamehash}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{authorfullhash}{29d909faa354af7d44a3a114138b3ddf}
-      \strng{authorfullhashraw}{29d909faa354af7d44a3a114138b3ddf}
+      \strng{namehash}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{fullhash}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{fullhashraw}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{bibnamehash}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{authorbibnamehash}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{authornamehash}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{authorfullhash}{939c13be1cf85876973df8fc86e6a7f7}
+      \strng{authorfullhashraw}{939c13be1cf85876973df8fc86e6a7f7}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
@@ -725,7 +778,7 @@
         {{hash=813bd95fe553e6079cd53a567b238287}{%
            family={Hinton},
            familyi={H\bibinitperiod},
-           given={Geoffrey\bibnamedelima E.},
+           given={Geoffrey\bibnamedelima E},
            giveni={G\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
       }
       \strng{namehash}{cea8ed54832a66ecfdad97505110ab67}
@@ -740,11 +793,10 @@
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{Advances in Neural Information Processing Systems (NeurIPS)}
+      \field{journaltitle}{Advances in Neural Information Processing Systems (NeurIPS)}
       \field{title}{When does label smoothing help?}
+      \field{volume}{32}
       \field{year}{2019}
-      \field{pages}{4694\bibrangedash 4703}
-      \range{pages}{10}
     \endentry
     \entry{simonyan2014saliency}{article}{}{}
       \name{author}{3}{}{%
@@ -778,7 +830,7 @@
       \field{labeltitlesource}{title}
       \field{journaltitle}{arXiv preprint arXiv:1312.6034}
       \field{title}{Deep inside convolutional networks: Visualising image classification models and saliency maps}
-      \field{year}{2014}
+      \field{year}{2013}
     \endentry
     \entry{sundararajan2017ig}{inproceedings}{}{}
       \name{author}{3}{}{%
@@ -821,7 +873,7 @@
         {{hash=2bb65ae1ae492d8a5f0410b495e608cf}{%
            family={Selvaraju},
            familyi={S\bibinitperiod},
-           given={Ramprasaath\bibnamedelima R.},
+           given={Ramprasaath\bibnamedelima R},
            giveni={R\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
         {{hash=615d55ccf6f32ec74ad65001e3a4ebbb}{%
            family={Cogswell},
@@ -861,64 +913,34 @@
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{IEEE International Conference on Computer Vision (ICCV)}
-      \field{title}{Grad-CAM: Visual explanations from deep networks via gradient-based localization}
+      \field{booktitle}{Proceedings of the IEEE International Conference on Computer Vision (ICCV)}
+      \field{title}{Grad-cam: Visual explanations from deep networks via gradient-based localization}
       \field{year}{2017}
       \field{pages}{618\bibrangedash 626}
       \range{pages}{9}
     \endentry
-    \entry{duan2023inequality}{inproceedings}{}{}
-      \name{author}{7}{}{%
-        {{hash=3a0b7231cb5c882f43417852a5a7f41c}{%
-           family={Duan},
-           familyi={D\bibinitperiod},
-           given={Rui},
-           giveni={R\bibinitperiod}}}%
-        {{hash=b66c63e4452e9d4afabea7f4caf155d4}{%
-           family={Hu},
-           familyi={H\bibinitperiod},
-           given={Jinfeng},
-           giveni={J\bibinitperiod}}}%
-        {{hash=0d5f006d5fc0c9498b2baa65600d9082}{%
-           family={Li},
-           familyi={L\bibinitperiod},
-           given={Renhao},
-           giveni={R\bibinitperiod}}}%
-        {{hash=88802f8577896565ec97bd3c9ff8deec}{%
-           family={Chen},
-           familyi={C\bibinitperiod},
-           given={Tianyuan},
-           giveni={T\bibinitperiod}}}%
-        {{hash=a60965b6ce657dbad201df8df25c5d34}{%
-           family={Liang},
-           familyi={L\bibinitperiod},
-           given={Hao},
-           giveni={H\bibinitperiod}}}%
-        {{hash=7639c6a1d98049360029dbd03bbe0b2e}{%
-           family={Cao},
-           familyi={C\bibinitperiod},
-           given={Jiancheng},
-           giveni={J\bibinitperiod}}}%
-        {{hash=97628922e9854000fe0981e5c7580268}{%
-           family={Ye},
-           familyi={Y\bibinitperiod},
-           given={Jingzhi},
-           giveni={J\bibinitperiod}}}%
+    \entry{Duan2023InequalityPI}{inproceedings}{}{}
+      \name{author}{1}{}{%
+        {{hash=95243e15ef52bed68bdbd3c6e0999710}{%
+           family={Xue},
+           familyi={X\bibinitperiod},
+           given={Ranjie\bibnamedelimb Duan\bibnamedelimb ，\bibnamedelimb Yuefeng\bibnamedelimb Chen\bibnamedelimb ，\bibnamedelimb Yao\bibnamedelimb Zhu\bibnamedelimb ，\bibnamedelimb Xiaojun\bibnamedelimb Jia\bibnamedelimb ，\bibnamedelimb Rong\bibnamedelimb Zhang\bibnamedelimb ，\bibnamedelima Hui},
+           giveni={R\bibinitperiod\bibinitdelim D\bibinitperiod\bibinitdelim ，\bibinitperiod\bibinitdelim Y\bibinitperiod\bibinitdelim C\bibinitperiod\bibinitdelim ，\bibinitperiod\bibinitdelim Y\bibinitperiod\bibinitdelim Z\bibinitperiod\bibinitdelim ，\bibinitperiod\bibinitdelim X\bibinitperiod\bibinitdelim J\bibinitperiod\bibinitdelim ，\bibinitperiod\bibinitdelim R\bibinitperiod\bibinitdelim Z\bibinitperiod\bibinitdelim ，\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
       }
-      \strng{namehash}{c55bff64650a6cd1bbc20c7ae71599f5}
-      \strng{fullhash}{8ee7558a6a6e49164655dd16b69aedf7}
-      \strng{fullhashraw}{8ee7558a6a6e49164655dd16b69aedf7}
-      \strng{bibnamehash}{c55bff64650a6cd1bbc20c7ae71599f5}
-      \strng{authorbibnamehash}{c55bff64650a6cd1bbc20c7ae71599f5}
-      \strng{authornamehash}{c55bff64650a6cd1bbc20c7ae71599f5}
-      \strng{authorfullhash}{8ee7558a6a6e49164655dd16b69aedf7}
-      \strng{authorfullhashraw}{8ee7558a6a6e49164655dd16b69aedf7}
+      \strng{namehash}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{fullhash}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{fullhashraw}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{bibnamehash}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{authorbibnamehash}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{authornamehash}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{authorfullhash}{95243e15ef52bed68bdbd3c6e0999710}
+      \strng{authorfullhashraw}{95243e15ef52bed68bdbd3c6e0999710}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{International Conference on Learning Representations (ICLR)}
-      \field{title}{Inequality phenomenon in $L_\infty$ adversarial training, and its unrealized threats}
+      \field{booktitle}{International Conference on Learning Representations(ICLR)}
+      \field{title}{Inequality phenomenon in l∞-adversarial training, and its unrealized threats}
       \field{year}{2023}
     \endentry
     \entry{lecun1998lenet}{article}{}{}
@@ -960,7 +982,7 @@
       \field{number}{11}
       \field{title}{Gradient-based learning applied to document recognition}
       \field{volume}{86}
-      \field{year}{1998}
+      \field{year}{2002}
       \field{pages}{2278\bibrangedash 2324}
       \range{pages}{47}
     \endentry
@@ -969,7 +991,7 @@
         {{hash=b6fbd171848aad4edf3925543f1f1522}{%
            family={Kingma},
            familyi={K\bibinitperiod},
-           given={Diederik\bibnamedelima P.},
+           given={Diederik\bibnamedelima P},
            giveni={D\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
         {{hash=8aa66e8231cc2fdbe67aa4f18ca970c6}{%
            family={Ba},
@@ -985,13 +1007,13 @@
       \strng{authornamehash}{a09df9f123146b8e2c7f1134c9496932}
       \strng{authorfullhash}{a09df9f123146b8e2c7f1134c9496932}
       \strng{authorfullhashraw}{a09df9f123146b8e2c7f1134c9496932}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{arXiv preprint arXiv:1412.6980}
       \field{title}{Adam: A method for stochastic optimization}
-      \field{year}{2015}
+      \field{year}{2014}
     \endentry
     \entry{carlini2017cw}{inproceedings}{}{}
       \name{author}{2}{}{%
@@ -1024,8 +1046,10 @@
       \field{pages}{39\bibrangedash 57}
       \range{pages}{19}
     \endentry
-    \entry{kokhlikyan2020captum}{inproceedings}{}{}
-      \name{author}{11}{}{%
+    \entry{Kokhlikyan2020CaptumAU}{article}{}{}
+      \true{moreauthor}
+      \true{morelabelname}
+      \name{author}{10}{}{%
         {{hash=6c26ceb727d8d970ca1fa8b07bdbc966}{%
            family={Kokhlikyan},
            familyi={K\bibinitperiod},
@@ -1061,41 +1085,36 @@
            familyi={M\bibinitperiod},
            given={Alexander},
            giveni={A\bibinitperiod}}}%
-        {{hash=e24c565840f741042c0daba0ac88836a}{%
-           family={Kliber},
+        {{hash=d56bf6217b8858d4502703b41db7535d}{%
+           family={Kliushkina},
            familyi={K\bibinitperiod},
            given={Natalia},
            giveni={N\bibinitperiod}}}%
-        {{hash=3e7243b3f1ba08349eb4212e71d3f80b}{%
-           family={Fan},
-           familyi={F\bibinitperiod},
+        {{hash=c150f45814fe0733700185839de1410c}{%
+           family={Araya},
+           familyi={A\bibinitperiod},
            given={Carlos},
            giveni={C\bibinitperiod}}}%
-        {{hash=8145b41b6e1fd2234982ef1f2827782b}{%
-           family={Stepka},
-           familyi={S\bibinitperiod},
-           given={Dilber},
-           giveni={D\bibinitperiod}}}%
-        {{hash=2b19b2e247867df4aa354a8c857abd45}{%
-           family={Reblitz-Richardson},
-           familyi={R\bibinithyphendelim R\bibinitperiod},
-           given={Orion},
-           giveni={O\bibinitperiod}}}%
+        {{hash=f92a248e2ef2a1736fedc07f71f17eab}{%
+           family={Yan},
+           familyi={Y\bibinitperiod},
+           given={Siqi},
+           giveni={S\bibinitperiod}}}%
       }
       \strng{namehash}{19c0917977579b8a09e00d2a493b13c1}
-      \strng{fullhash}{53059336f07478c37b8cac154dc0a824}
-      \strng{fullhashraw}{53059336f07478c37b8cac154dc0a824}
+      \strng{fullhash}{7196b9e9368945a641c7e3f28a0f3d2c}
+      \strng{fullhashraw}{7196b9e9368945a641c7e3f28a0f3d2c}
       \strng{bibnamehash}{19c0917977579b8a09e00d2a493b13c1}
       \strng{authorbibnamehash}{19c0917977579b8a09e00d2a493b13c1}
       \strng{authornamehash}{19c0917977579b8a09e00d2a493b13c1}
-      \strng{authorfullhash}{53059336f07478c37b8cac154dc0a824}
-      \strng{authorfullhashraw}{53059336f07478c37b8cac154dc0a824}
+      \strng{authorfullhash}{7196b9e9368945a641c7e3f28a0f3d2c}
+      \strng{authorfullhashraw}{7196b9e9368945a641c7e3f28a0f3d2c}
       \field{sortinit}{4}
       \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{ICML Workshop on Human Interpretability in Machine Learning}
-      \field{title}{Captum: A unified and generic model interpretability library for {PyTorch}}
+      \field{journaltitle}{arXiv preprint arXiv:2009.07896}
+      \field{title}{Captum: A unified and generic model interpretability library for pytorch}
       \field{year}{2020}
     \endentry
     \entry{lecun2010mnist}{article}{}{}
@@ -1124,11 +1143,12 @@
       \strng{authornamehash}{efcd7df77681651155e8e7a4553de729}
       \strng{authorfullhash}{efcd7df77681651155e8e7a4553de729}
       \strng{authorfullhashraw}{efcd7df77681651155e8e7a4553de729}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{journaltitle}{ATT Labs [Online]}
+      \field{howpublished}{\url{http://yann.lecun.com/exdb/mnist/}}
+      \field{note}{Accessed: 2026-05-03}
       \field{title}{MNIST handwritten digit database}
       \field{year}{2010}
     \endentry
