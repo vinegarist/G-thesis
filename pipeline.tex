@@ -18,7 +18,7 @@
 
 \begin{enumerate}
   \item \textbf{关键区域定位}：利用像素重要性图定位模型决策的关键像素区域，生成二值掩码 $M$。
-  \item \textbf{遮蔽攻击生成}：在关键区域定位的基础上，分别设计固定遮蔽攻击与自适应遮蔽攻击，前者适用于批量高效攻击，后者以最小代价实现逐样本自适应攻击。
+  \item \textbf{遮蔽攻击生成}：在关键区域定位的基础上，分别设计遮蔽块参数固定攻击和遮蔽块参数自适应攻击。
   \item \textbf{对抗性训练}：将遮蔽攻击生成的对抗样本引入训练循环，并进一步提出混合对抗性训练策略，将遮蔽攻击与 PGD 攻击\cite{madry2018pgd}相结合，提升模型对多类型攻击的泛化防御能力。
 \end{enumerate}
 
@@ -92,23 +92,23 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
 \begin{equation}
   \text{IG}_i(x, y) = (x_i - x_{0,i}) \cdot \int_0^1 \frac{\partial f_y(x_0 + \alpha(x - x_0))}{\partial x_i} \,\mathrm{d}\alpha
 \end{equation}
-在实践中，积分通过 Riemann 近似以 $n_{\text{steps}}=50$ 步离散化，需要 50 次前向与反向传播，且依赖 Captum 等外部归因库。
+在实践中，积分通过 Riemann 近似以 $n_{\text{steps}}=50$ 步离散化，需要 50 次前向与反向传播，且依赖 Captum 等外部库。
 
 
 
 
 
 
-\section{固定遮蔽攻击}
+\section{基于原始梯度显著性图(Saliency Map)的参数固定遮蔽攻击}
 
 \subsection{算法设计}
 
-固定遮蔽攻击是本文实现的基础攻击方法，其核心思想是对批次内所有样本施加统一参数的遮蔽操作。给定超参数 top\_$k$（关键区域数量）和 kernel\_size（遮蔽窗口尺寸），算法对每个样本独立定位最显著的 top\_$k$ 个邻域聚合峰值，并在这些位置施加固定尺寸的方形遮蔽。
+参数固定遮蔽攻击是本文实现的基础攻击方法，其核心思想是对样本施加统一参数的遮蔽操作。给定超参数 top\_$k$（关键区域数量）和 kernel\_size（遮蔽窗口尺寸），算法对每个样本独立定位最显著的 top\_$k$ 个邻域聚合峰值，并在这些位置施加固定尺寸的方形遮蔽。
 
-算法\ref{alg:fixed_attack}给出了固定原始梯度显著性图的完整流程。
+算法\ref{alg:fixed_attack}给出了基于原始梯度显著性图(Saliency Map)的参数固定遮蔽攻击的完整流程。
 
 \begin{algorithm}[htbp]
-  \caption{固定遮蔽攻击}
+  \caption{参数固定遮蔽攻击}
   \label{alg:fixed_attack}
   \begin{algorithmic}[1]
     \Require 分类模型 $f_{\theta}$，输入图像 $x \in \mathbb{R}^{C \times H \times W}$，标签 $y$，
@@ -129,29 +129,23 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
   \end{algorithmic}
 \end{algorithm}
 
-\subsection{方法特性分析}
-
-固定遮蔽攻击具有以下特点：
-
-\textbf{均匀攻击强度。}批次内所有样本使用相同的 top\_$k$ 和 kernel\_size，每个样本受到面积相同的遮蔽。
-
-\textbf{批量并行高效。}显著性计算与卷积聚合操作均支持批维度的并行计算，在 GPU 上可高效处理大批量数据，适合嵌入训练循环。
-
-\textbf{参数直观可控。}top\_$k$ 直接控制遮蔽区域的数量，kernel\_size 控制每个遮蔽块的尺寸，两者共同决定遮蔽的总覆盖面积约为 top\_$k \times \text{kernel\_size}^2$。在参数合理的情况下，遮蔽面积相对于图像总面积的比例较小，但由于遮蔽位置精确命中显著性峰值，攻击效果显著。
-
-然而，固定攻击存在一个潜在局限：对不同难度的样本施加相同强度的遮蔽，可能对简单样本过度扰动，而对困难样本扰动不足。为此，本文进一步提出自适应遮蔽攻击。
 
 
-\section{自适应遮蔽攻击}
+参数固定遮蔽攻击可直接控制遮蔽区域的数量，kernel\_size 控制每个遮蔽块的尺寸，两者共同决定遮蔽的总覆盖面积约为 top\_$k \times \text{kernel\_size}^2$。在参数合理的情况下，遮蔽面积相对于图像总面积的比例较小，但由于遮蔽位置精确命中显著性峰值，攻击效果显著。
+
+然而，参数固定遮蔽攻击存在一个潜在局限：对不同难度的样本施加相同强度的遮蔽，可能对简单样本过度扰动，而对困难样本扰动不足。为此，本文进一步提出自适应遮蔽攻击。
+
+
+\section{基于原始梯度显著性图(Saliency Map)的参数自适应遮蔽攻击}
 
 \subsection{算法设计}
 
-自适应遮蔽攻击是本文实现的改进攻击方法。其核心思想是通过迭代方式逐步遮蔽最关键的区域，以最小的遮蔽面积实现有效攻击。算法引入两个关键参数：最大遮蔽区域数$N$和最大遮蔽半径$R$。
+参数自适应遮蔽攻击是本文实现的改进攻击方法。其核心思想是通过迭代方式逐步遮蔽最关键的区域，以最小的遮蔽面积实现有效攻击。算法引入两个关键参数：最大遮蔽区域数$N$和最大遮蔽半径$R$。
 
 算法\ref{alg:adaptive_attack}详细描述了自适应原始梯度显著性图的完整流程。
 
 \begin{algorithm}[htbp]
-  \caption{自适应遮蔽攻击}
+  \caption{参数自适应遮蔽攻击}
   \label{alg:adaptive_attack}
   \begin{algorithmic}[1]
     \Require 分类模型 $f_{\theta}$，输入图像 $x \in \mathbb{R}^{C \times H \times W}$，标签 $y$，
@@ -182,27 +176,17 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
   \end{algorithmic}
 \end{algorithm}
 
-\subsection{方法特性分析}
+该算法维护每个样本的成功标志 $\mathrm{success}[i]$，一旦样本 $i$ 的预测被成功翻转，后续迭代不再对其施加额外扰动。这确保了每个样本只受到恰好足够的最小遮蔽，避免不必要的过度扰动。同时算法在两个维度上逐步增加攻击强度：遮蔽区域数 $n \in \{1, \ldots, N\}$ 控制覆盖的关键区域数量；遮蔽半径 $r \in \{1, \ldots, R\}$ 控制每个遮蔽块的空间范围。对于每个 $(n, r)$ 组合，遮蔽总面积约为 $n \times (2r+1)^2$。通过先遍历 $n$ 再遍历 $r$ 的搜索顺序，优先以更多区域、较小范围的遮蔽实现攻击。
 
-\textbf{（1）逐样本自适应性。}算法维护每个样本的成功标志 $\mathrm{success}[i]$，一旦样本 $i$ 的预测被成功翻转，后续迭代不再对其施加额外扰动。这确保了每个样本只受到恰好足够的最小遮蔽，避免不必要的过度扰动。
 
-\textbf{（2）二维渐进搜索。}算法在两个维度上逐步增加攻击强度：遮蔽区域数 $n \in \{1, \ldots, N\}$ 控制覆盖的关键区域数量；遮蔽半径 $r \in \{1, \ldots, R\}$ 控制每个遮蔽块的空间范围。对于每个 $(n, r)$ 组合，遮蔽总面积约为 $n \times (2r+1)^2$。通过先遍历 $n$ 再遍历 $r$ 的搜索顺序，优先以更多区域、较小范围的遮蔽实现攻击。
 
-\textbf{（3）累积掩码预计算。}为避免在渐进遮蔽过程中重复计算掩码，算法在第3至7行预先计算所有 $(n, r)$ 组合的累积掩码 $\mathrm{mask}(n,r)$。掩码满足递推关系：
-\begin{equation}
-  \mathrm{mask}(n, r) = \mathrm{clamp}\!\left(\mathrm{mask}(n-1, r) + M_{\mathrm{block}}(n, r),\; 0, 1\right)
-\end{equation}
-其中 $M_{\mathrm{block}}(n, r)$ 为以第 $n$ 显著像素为中心、半径 $r$ 的方形掩码块。预计算的复杂度为 $\mathcal{O}(N \cdot R \cdot H \cdot W)$，开销集中于初始化阶段，渐进搜索阶段只需直接查表，效率显著提升。
+\section{基于梯度积分(IG)的遮蔽攻击}
 
-\textbf{（4）与固定攻击的对比。}固定攻击始终施加相同面积的遮蔽（top\_$k \times \text{kernel\_size}^2$），而自适应攻击为每个样本找到使预测翻转的最小 $(n, r)$ 组合。在攻击成功率相近的情况下，自适应攻击的平均遮蔽面积更小，意味着扰动更精准、更隐蔽；而对于难以攻击的样本，自适应攻击可以逐步提升强度直至成功，攻击成功率更高。
+为对比不同像素重要性计算方法对遮蔽攻击效果及对抗性训练性能的影响，本文在基于梯度显著性图(Saliency Map)的遮蔽攻击方法之外，同时实现了基于梯度积分（IG）的遮蔽攻击方法。IG 遮蔽攻击与Saliency Map遮蔽攻击共享相同的掩码生成框架，Top-$K$ 位置选取与掩码膨胀仅在像素重要性计算步骤进行替换：将式\eqref{eq:saliency}中的梯度显著性图 $S(x,y) = |\partial f_y(x)/\partial x|$ 替换为 IG 图。
 
-\section{基于IG的遮蔽攻击}
+具体而言，基于 IG 的参数固定遮蔽攻击流程为：首先使用 Captum 库\cite{Kokhlikyan2020CaptumAU}的 IntegratedGradients 模块（$n_{\text{steps}}=50$）计算每个像素的 IG 值，随后执行与Saliency Map遮蔽攻击相同的邻域聚合（式\eqref{eq:conv_sum}）、Top-$K$ 选取与掩码膨胀操作，最终生成遮蔽对抗样本。基于IG的参数自适应遮蔽攻击则在计算替换为 IG 的基础上，沿用自适应遮蔽攻击（算法\ref{alg:adaptive_attack}）的逐样本提前终止与二维渐进搜索机制，实现基于 IG 的自适应遮蔽。
 
-为对比不同像素重要性计算方法对遮蔽攻击效果及对抗性训练性能的影响，本文在梯度显著性图之外，同时实现了基于梯度积分（IG）的遮蔽攻击方法。IG 遮蔽攻击与原始梯度显著性图共享相同的掩码生成框架，Top-$K$ 位置选取与掩码膨胀仅在像素重要性计算步骤进行替换：将式\eqref{eq:saliency}中的梯度显著性图 $S(x,y) = |\partial f_y(x)/\partial x|$ 替换为 IG 图。
-
-具体而言，\textbf{固定 IG 遮蔽攻击}的流程为：首先使用 Captum 库\cite{Kokhlikyan2020CaptumAU}的 IntegratedGradients 模块（$n_{\text{steps}}=50$）计算每个像素的 IG 值，随后对归因图执行与梯度显著性图相同的邻域聚合（式\eqref{eq:conv_sum}）、Top-$K$ 选取与掩码膨胀操作，最终生成遮蔽对抗样本。\textbf{自适应 IG 遮蔽攻击}则在归因计算替换为 IG 的基础上，沿用自适应遮蔽攻击（算法\ref{alg:adaptive_attack}）的逐样本提前终止与二维渐进搜索机制，实现基于 IG 的自适应遮蔽。
-
-两种 IG 遮蔽攻击的主要参数与原始梯度显著性图保持一致：固定攻击取 $k=9$，自适应攻击取 $N=5$、$R=3$。IG 的积分步数取 $n_{\text{steps}}=50$，基线图像取全零图像（$x_0 = \mathbf{0}$）。
+两种 IG 遮蔽攻击的主要参数与原始梯度显著性图保持一致：参数固定遮蔽攻击取 $k=9$，参数自适应遮蔽攻击取 $N=5$、$R=3$。IG 的积分步数取 $n_{\text{steps}}=50$，基线图像取全零图像（$x_0 = \mathbf{0}$）。
 
 \section{对抗性训练策略}
 
@@ -212,15 +196,15 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
 \begin{equation}
   \min_{\theta} \; \mathbb{E}_{(x,y)\sim\mathcal{D}} \left[ \mathcal{L}\!\left(f_{\theta}(x'),\, y\right) \right], \quad x' = \mathcal{A}_{\text{occ}}(f_{\theta}, x, y)
 \end{equation}
-其中 $\mathcal{A}_{\text{occ}}$ 为遮蔽攻击算子（固定遮蔽攻击或自适应遮蔽攻击）。当像素重要性计算方法选用Saliency Map时，对应显著性遮蔽对抗性训练；当选用IG时，对应 IG 遮蔽对抗性训练。两种像素重要性计算方法均可与固定遮蔽或自适应遮蔽攻击组合，形成 Fixed-IG-AT、Adaptive-IG-AT 等训练策略变体。
+其中 $\mathcal{A}_{\text{occ}}$ 为遮蔽攻击方法（参数固定遮蔽攻击或参数自适应遮蔽攻击）。当像素重要性计算方法选用Saliency Map时，对应基于Saliency Map遮蔽攻击的对抗性训练（Saliency-AT）；当选用IG时，对应基于 IG 遮蔽攻击的对抗性训练(IG-AT)。两种像素重要性计算方法均可与参数固定遮蔽攻击或参数自适应遮蔽攻击策略组合。
 
-需要特别注意的是，遮蔽攻击的生成依赖当前模型状态。在生成攻击时，模型应处于评估（eval）模式以关闭 Dropout 和 BatchNorm 的训练行为，从而确保显著性梯度的稳定性；在用对抗样本更新模型参数时，模型应切换回训练（train）模式。算法\ref{alg:soat}描述了完整的训练流程。
+算法\ref{alg:soat}描述了完整的训练流程。
 
 \begin{algorithm}[htbp]
   \caption{基于遮蔽攻击的对抗性训练}
   \label{alg:soat}
   \begin{algorithmic}[1]
-    \Require 训练集 $\mathcal{D}$，模型 $f_{\theta}$，遮蔽攻击算子 $\mathcal{A}$，训练轮数 epochs
+    \Require 训练集 $\mathcal{D}$，模型 $f_{\theta}$，遮蔽攻击方法 $\mathcal{A}$，训练轮数 epochs
     \Ensure 鲁棒模型参数 $\theta^*$
     \For{$\mathrm{epoch} = 1$ \textbf{to} epochs}
       \For{每个小批量 $(X, Y) \in \mathcal{D}$}
@@ -238,7 +222,7 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
 
 \subsection{混合对抗性训练策略}
 
-基于遮蔽攻击的对抗性训练能够有效提升模型对遮蔽类攻击的防御能力，但由于训练时仅使用遮蔽攻击样本，模型可能在抵御梯度类攻击（如 FGSM\cite{goodfellow2015fgsm}、PGD\cite{madry2018pgd}）方面出现退化。这一现象源于对抗性训练的\textbf{攻击类型特异性}：模型倾向于拟合训练时所见攻击的扰动分布，对训练时未见的攻击类型泛化能力有限。
+基于遮蔽攻击的对抗性训练能够有效提升模型对遮蔽类攻击的防御能力，但由于训练时仅使用遮蔽攻击样本，模型可能在抵御梯度类攻击（如 FGSM\cite{goodfellow2015fgsm}、PGD\cite{madry2018pgd}）方面出现退化。这一现象源于对抗性训练的攻击类型特异性，模型倾向于拟合训练时所见攻击的扰动分布，对训练时未见的攻击类型泛化能力有限。
 
 为解决上述问题，本文提出混合对抗性训练策略（Mixed Adversarial Training，Mix AT），在每次训练迭代中以概率 $p$ 选用遮蔽攻击，以概率 $1-p$ 选用 PGD 攻击：
 
@@ -298,10 +282,10 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
     PGD $\varepsilon$ & 0.1 & PGD 攻击扰动预算（$L_\infty$ 范数上界）\\
     PGD step\_size & 0.025 & PGD 单步步长 \\
     PGD iterations & 20 & PGD 迭代步数 \\
-    top\_$k$ & 9 & 固定遮蔽攻击关键区域数 \\
+    top\_$k$ & 9 & 参数固定遮蔽攻击关键区域数 \\
     kernel\_size & 3 & 遮蔽窗口边长（像素） \\
-    $N$ & 5 & 自适应攻击最大遮蔽区域数 \\
-    $R$ & 3 & 自适应攻击最大遮蔽半径 \\
+    $N$ & 5 & 参数自适应遮蔽攻击最大遮蔽区域数 \\
+    $R$ & 3 & 参数自适应遮蔽攻击最大遮蔽半径 \\
     ratio $p$ & 0.5 & 混合训练中遮蔽攻击的比例 \\
     occlusion\_color $c$ & 0.0 & 遮蔽填充颜色（黑色） \\
     \bottomrule
@@ -314,11 +298,10 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
 \end{equation}
 其中 $\Pi_{x,\varepsilon}$ 表示向以原始样本 $x$ 为中心的 $L_\infty$ 范数 $\varepsilon$-球的投影操作。
 
-\textbf{固定遮蔽参数。}top\_$k=9$ 与 kernel\_size$=3$ 意味着每个样本最多被遮蔽 $9 \times 3^2 = 81$ 个像素。对于 MNIST 的 $28 \times 28 = 784$ 像素图像，遮蔽比例约为 10.3\%。
+\textbf{参数固定遮蔽参数。}top\_$k=9$ 与 kernel\_size$=3$ 意味着每个样本最多被遮蔽 $9 \times 3^2 = 81$ 个像素。对于 MNIST 的 $28 \times 28 = 784$ 像素图像，遮蔽比例约为 10.3\%。
 
-\textbf{自适应遮蔽参数。}最大区域数 $N=5$、最大半径 $R=3$ 定义了二维搜索空间，最大可能的遮蔽面积为 $5 \times (2 \times 3+1)^2 = 5 \times 49 = 245$ 像素，约占图像面积的 31.3\%。但在实践中，大多数样本以远小于此的遮蔽即可被成功攻击，体现了自适应策略的"最小扰动"优势。
+\textbf{参数自适应遮蔽参数。}最大区域数 $N=5$、最大半径 $R=3$ 定义了二维搜索空间，最大可能的遮蔽面积为 $5 \times (2 \times 3+1)^2 = 5 \times 49 = 245$ 像素，约占图像面积的 31.3\%。但在实践中，大多数样本以远小于此的遮蔽即可被成功攻击。
 
-\textbf{模型评估模式切换。}在生成对抗样本前将模型切换至 eval 模式，关闭 BatchNorm 的均值与方差估计更新以及 Dropout 的随机失活，确保前向传播与反向传播的确定性，从而获得更稳定的显著性梯度。生成对抗样本后立即切换回 train 模式进行参数更新，这一细节对于训练的稳定性至关重要。
 
 
 \section{本章小结}
@@ -327,11 +310,11 @@ Saliency Map由Simonyan等人\cite{simonyan2014saliency}提出，其核心思想
 
 首先，对研究问题进行了形式化定义，明确了遮蔽攻击相对于传统 $L_p$ 范数攻击的差异性，指出了现有对抗性训练方法在防御遮蔽攻击方面的局限性，并给出了本章方法的总体框架。
 
-其次，详细阐述了基于梯度显著性图的关键区域定位方法。给出了梯度显著性图的定义与计算算法（算法\ref{alg:saliency}），介绍了基于卷积邻域聚合的 Top-$K$ 位置选取策略与掩码膨胀方法。在此基础上，实现了基于梯度积分的固定 IG 遮蔽攻击与自适应 IG 遮蔽攻击，两种 IG 攻击与原始梯度显著性攻击共享相同的掩码生成框架，仅在像素重要性计算步骤进行替换。
+其次，详细阐述了基于梯度显著性图的关键区域定位方法。给出了梯度显著性图的定义与计算算法（算法\ref{alg:saliency}），介绍了基于卷积邻域聚合的 Top-$K$ 位置选取策略与掩码膨胀方法。在此基础上，实现了基于梯度积分的参数固定 IG 遮蔽攻击与参数自适应 IG 遮蔽攻击，两种 IG 攻击与原始梯度显著性攻击共享相同的掩码生成框架，仅在像素重要性计算步骤进行替换。
 
-第三，实现了固定遮蔽攻击（算法\ref{alg:fixed_attack}）。该方法对批次内所有样本施加统一参数的遮蔽操作，具有批量高效、参数可控的特点，适合作为对抗性训练的基础攻击手段。
+第三，实现了参数固定遮蔽攻击（算法\ref{alg:fixed_attack}）。该方法为对抗性训练的基础攻击手段。
 
-第四，实现了自适应遮蔽攻击（算法\ref{alg:adaptive_attack}）。通过引入逐样本提前终止策略和二维渐进搜索机制（遮蔽区域数与遮蔽半径的联合搜索），自适应攻击能够以最小的扰动面积实现有效攻击，在攻击精准性和攻击成功率方面均优于固定攻击。使用预计算累积掩码进一步提升了算法的运行效率。
+第四，实现了参数自适应遮蔽攻击（算法\ref{alg:adaptive_attack}）。通过引入逐样本提前终止策略和二维渐进搜索机制（遮蔽区域数与遮蔽半径的联合搜索），自适应攻击能够以最小的扰动面积实现有效攻击，在攻击精准性和攻击成功率方面均优于参数固定遮蔽攻击。使用预计算累积掩码进一步提升了算法的运行效率。
 
 最后，设计了两种对抗性训练策略：基于遮蔽攻击的对抗性训练（算法\ref{alg:soat}）和混合对抗性训练（算法\ref{alg:mat}）。训练框架中的遮蔽攻击算子支持梯度显著性图与梯度积分两种像素重要性计算方法，分别对应显著性遮蔽对抗性训练与 IG 遮蔽对抗性训练及其混合变体。混合训练策略通过以概率 $p=0.5$ 交替使用遮蔽攻击与 PGD 攻击，有效缓解了单一攻击类型训练导致的防御泛化能力不足问题。训练超参数的详细配置见表\ref{tab:training_params}。
 
